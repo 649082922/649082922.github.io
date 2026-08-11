@@ -2,166 +2,992 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>放置修仙</title>
 <style>
-* { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: "Microsoft YaHei","PingFang SC",sans-serif;
-  background: radial-gradient(ellipse at top, #2c1e4a 0%, #1a1228 60%, #0f0818 100%);
-  min-height: 100vh; padding: 14px; color: #e8d5ff; user-select: none; }
-h1 { text-align: center; font-size: 1.3rem; margin-bottom: 8px; color: #fff; text-shadow: 0 0 10px #b388ff; }
-.qi { text-align: center; font-size: 2rem; color: #ffd54f; font-weight: bold; text-shadow: 0 0 12px rgba(255,179,0,.55); }
-.rate { text-align: center; font-size: .85rem; color: #b388ff; margin: 4px 0 8px; }
-.realm { text-align: center; font-size: 1.05rem; color: #fff; margin-bottom: 6px; }
-.bar { background: rgba(255,255,255,.1); height: 14px; border-radius: 7px; overflow: hidden; margin: 0 auto 14px; max-width: 380px; border: 1px solid rgba(179,136,255,.3); }
-.bar > div { height: 100%; background: linear-gradient(90deg,#b388ff,#ffd54f); transition: width .3s; }
-.btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 14px; }
-button { cursor: pointer; border: none; border-radius: 10px; padding: 10px 16px; font-size: .9rem; font-weight: bold; transition: transform .1s, opacity .1s; font-family: inherit; }
-button:hover:not(:disabled) { transform: translateY(-2px); }
-.btn-cultivate { background: linear-gradient(135deg,#7c4dff,#b388ff); color: #fff; box-shadow: 0 2px 8px rgba(124,77,255,.5); }
-.btn-break { background: linear-gradient(135deg,#ff8a65,#ffd54f); color: #3e2723; }
-button:disabled { opacity: .4; cursor: not-allowed; }
-.ups { max-width: 420px; margin: 0 auto; display: flex; flex-direction: column; gap: 7px; }
-.up { display: flex; justify-content: space-between; align-items: center; background: rgba(179,136,255,.12); border: 1px solid rgba(179,136,255,.3); padding: 7px 12px; border-radius: 10px; }
-.up button { background: #5e35b1; color: #fff; padding: 6px 10px; font-size: .8rem; }
-.info { font-size: .8rem; line-height: 1.5; }
-.info b { color: #ffd54f; }
-.info span { color: #b388ff; }
-#msg { text-align: center; margin-top: 12px; font-size: .85rem; color: #b388ff; height: 1.2em; font-weight: bold; }
-.hint { font-size: .72rem; opacity: .6; text-align: center; margin-top: 8px; line-height: 1.5; }
+/* ===== 仙侠深色主题：紫金星空 ===== */
+:root{
+  --bg0:#06010d; --bg1:#1a0b2e; --panel:rgba(28,14,48,.62);
+  --purple:#7c3aed; --purple2:#a855f7;
+  --gold:#fbbf24; --gold2:#fde68a;
+  --cyan:#22d3ee; --text:#ede9fe; --dim:#a78bfa; --border:rgba(167,139,250,.22);
+  --good:#86efac; --bad:#fca5a5; --epic:#fde047;
+}
+*{box-sizing:border-box; margin:0; padding:0; -webkit-tap-highlight-color:transparent;}
+html,body{height:100%;}
+body{
+  font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",sans-serif;
+  background:radial-gradient(ellipse at 50% -10%, #1a0b2e 0%, #0a0418 45%, #06010d 100%);
+  color:var(--text); overflow:hidden; position:relative;
+}
+#bg{position:fixed; inset:0; z-index:0;}
+#fx{position:fixed; inset:0; z-index:50; pointer-events:none;}
+#app{position:relative; z-index:1; height:100%; max-width:560px; margin:0 auto;
+  display:flex; flex-direction:column; padding:8px 12px 6px; gap:7px;}
+.title-row{display:flex; align-items:baseline; gap:8px; padding:2px 2px 0;}
+.title{font-size:20px; font-weight:800; letter-spacing:4px;
+  background:linear-gradient(90deg,var(--gold2),var(--purple2));
+  -webkit-background-clip:text; background-clip:text; color:transparent;}
+.subtitle{font-size:11px; color:var(--dim); letter-spacing:1px;}
+.shi{font-size:11px; color:var(--gold2); margin-left:auto;}
+.hud{display:flex; justify-content:space-between; align-items:flex-start; padding:4px 4px 0;}
+.hud-left{min-width:0;}
+.realm-line{font-size:13px; color:var(--dim);}
+#realm-name{color:var(--gold2); font-weight:700; font-size:15px;}
+.qi-line{margin-top:1px;}
+.qi-num{font-size:30px; font-weight:800; letter-spacing:1px;
+  background:linear-gradient(180deg,#fff,var(--gold));
+  -webkit-background-clip:text; background-clip:text; color:transparent;}
+.qi-unit{font-size:13px; color:var(--dim); margin-left:6px;}
+.rate-line{font-size:11px; color:var(--purple2); margin-top:1px;}
+.mute-btn{background:rgba(124,58,237,.16); border:1px solid var(--border);
+  color:var(--dim); border-radius:8px; padding:4px 9px; font-size:11px; cursor:pointer; flex:none;}
+.mute-btn:hover{color:var(--gold2);}
+.progress{height:4px; background:rgba(255,255,255,.06); border-radius:2px; overflow:hidden; margin:2px 4px 0;}
+.progress-bar{height:100%; width:0%; background:linear-gradient(90deg,var(--purple),var(--gold));
+  transition:width .3s; box-shadow:0 0 8px rgba(251,191,36,.5);}
+.core-wrap{position:relative; height:188px; display:flex; align-items:center; justify-content:center;}
+#core{width:210px; height:210px; cursor:pointer;}
+.float-holder{position:absolute; left:50%; top:48%; width:0; height:0;}
+.float-text{position:absolute; left:-24px; color:var(--gold2); font-weight:700; font-size:13px;
+  text-shadow:0 0 8px rgba(253,224,71,.85); animation:floatUp 1.4s ease-out forwards;
+  pointer-events:none; white-space:nowrap;}
+@keyframes floatUp{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(-48px);opacity:0}}
+.break-wrap{text-align:center; padding:0 4px;}
+.break-btn{width:100%; border:none; cursor:pointer; border-radius:12px; padding:11px;
+  background:linear-gradient(135deg,rgba(124,58,237,.55),rgba(251,191,36,.32));
+  border:1px solid rgba(251,191,36,.42); color:var(--text); transition:transform .12s, box-shadow .2s;}
+.break-btn:hover:not(:disabled){box-shadow:0 0 22px rgba(251,191,36,.32); transform:translateY(-1px);}
+.break-btn:disabled,.break-btn.locked{opacity:.5; cursor:not-allowed;}
+.bb-main{font-size:15px; font-weight:700; letter-spacing:2px; color:var(--gold2);}
+.bb-sub{font-size:11px; color:var(--dim); margin-top:3px;}
+.rebirth-btn{background:linear-gradient(135deg,rgba(251,191,36,.5),rgba(236,72,153,.4));}
+.break-info{font-size:11px; color:var(--dim); margin-top:5px;}
+.breaking-text{color:var(--gold2); font-weight:700; letter-spacing:4px; font-size:14px; animation:pulse 1s infinite;}
+@keyframes pulse{50%{opacity:.35}}
+.tabs{display:flex; gap:6px;}
+.tab{flex:1; padding:8px 0; background:rgba(255,255,255,.04); border:1px solid var(--border);
+  color:var(--dim); border-radius:10px; cursor:pointer; font-size:13px;}
+.tab.active{background:linear-gradient(180deg,rgba(124,58,237,.38),rgba(124,58,237,.14));
+  color:var(--gold2); border-color:rgba(251,191,36,.42);}
+.panel-wrap{flex:1; overflow-y:auto; padding:4px 2px 6px;}
+.panel-wrap::-webkit-scrollbar{width:4px;}
+.panel-wrap::-webkit-scrollbar-thumb{background:rgba(167,139,250,.3); border-radius:2px;}
+.panel{display:flex; flex-direction:column; gap:8px;}
+.hidden{display:none;}
+.item-card{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:10px;
+  display:flex; gap:10px; align-items:center; backdrop-filter:blur(4px);}
+.item-card.owned{opacity:.6; border-color:rgba(134,239,172,.3);}
+.item-seal{flex:none; width:42px; height:42px; border-radius:50%; display:flex; align-items:center;
+  justify-content:center; font-size:19px; font-weight:700; color:#1a0b2e;
+  background:linear-gradient(135deg,var(--gold2),var(--gold)); box-shadow:0 0 12px rgba(251,191,36,.4);}
+.item-body{flex:1; min-width:0;}
+.item-name{font-size:14px; font-weight:700; color:var(--text);}
+.item-desc{font-size:11px; color:var(--dim); margin-top:2px;}
+.item-meta{font-size:11px; color:var(--purple2); margin-top:2px;}
+.buy-btn{flex:none; border:1px solid rgba(251,191,36,.5); background:rgba(251,191,36,.12);
+  color:var(--gold2); border-radius:8px; padding:6px 10px; font-size:12px; cursor:pointer; white-space:nowrap;}
+.buy-btn:disabled,.buy-btn.cant{opacity:.45; cursor:not-allowed;}
+.buy-btn:hover:not(:disabled):not(.cant){background:rgba(251,191,36,.22);}
+.adv-card{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:14px; text-align:center;}
+.adv-title{font-size:15px; font-weight:700; color:var(--gold2); letter-spacing:2px;}
+.adv-desc{font-size:11px; color:var(--dim); margin-top:6px; line-height:1.6; white-space:pre-line;}
+.adv-btn{margin-top:10px; border:1px solid rgba(167,139,250,.5); background:rgba(124,58,237,.22);
+  color:var(--text); border-radius:10px; padding:9px 18px; cursor:pointer; font-size:13px;}
+.adv-btn:disabled{opacity:.5; cursor:not-allowed;}
+.adv-tips{background:var(--panel); border:1px solid var(--border); border-radius:12px; padding:10px 12px;}
+.adv-tip-line{font-size:11px; color:#8b7ac4; line-height:1.9;}
+.achv-grid{display:grid; grid-template-columns:1fr 1fr; gap:7px;}
+.achv{background:var(--panel); border:1px solid var(--border); border-radius:10px; padding:8px;}
+.achv.done{border-color:rgba(251,191,36,.45); background:rgba(251,191,36,.06);}
+.achv-name{font-size:12px; font-weight:700; color:var(--dim);}
+.achv.done .achv-name{color:var(--gold2);}
+.achv-desc{font-size:10px; color:#7c6bb0; margin-top:2px;}
+.achv-prog{font-size:10px; color:var(--dim); margin-top:4px;}
+.log-wrap{height:70px; overflow-y:auto; background:rgba(10,4,20,.5); border:1px solid var(--border);
+  border-radius:10px; padding:5px 8px; font-size:11px; line-height:1.5; flex:none;}
+.log-wrap::-webkit-scrollbar{width:3px;}
+.log-wrap::-webkit-scrollbar-thumb{background:rgba(167,139,250,.25);}
+.log-line{color:var(--dim);}
+.log-line.log-good{color:var(--good);}
+.log-line.log-bad{color:var(--bad);}
+.log-line.log-epic{color:var(--epic); font-weight:700;}
+.log-line.log-ach{color:var(--gold2);}
 </style>
 </head>
 <body>
-<h1>⚡ 放置修仙</h1>
-<div class="qi">💫 <span id="qi">0</span></div>
-<div class="rate">灵气速率 <span id="rate">1</span>/秒</div>
-<div class="realm" id="realm">境界：练气一层</div>
-<div class="bar"><div id="bar" style="width:0%"></div></div>
-<div class="btns">
-  <button class="btn-cultivate" onclick="cultivate()">🧘 打坐 +<span id="manual">5</span></button>
-  <button class="btn-break" id="breakBtn" onclick="doBreak()">✨ 突破</button>
+<canvas id="bg"></canvas>
+<div id="app">
+  <div class="title-row">
+    <span class="title">放置修仙</span>
+    <span class="subtitle">一念成仙，万法归一</span>
+    <span class="shi" id="shi-tag"></span>
+  </div>
+  <div class="hud">
+    <div class="hud-left">
+      <div class="realm-line"><span id="realm-name"></span><span> · </span><span id="realm-desc"></span></div>
+      <div class="qi-line"><span class="qi-num" id="qi-num">0</span><span class="qi-unit">灵气</span></div>
+      <div class="rate-line" id="rate-line"></div>
+    </div>
+    <button class="mute-btn" id="mute-btn"></button>
+  </div>
+  <div class="progress"><div class="progress-bar" id="progress-bar"></div></div>
+  <div class="core-wrap">
+    <canvas id="core"></canvas>
+    <div class="float-holder" id="qi-float"></div>
+  </div>
+  <div class="break-wrap" id="break-wrap"></div>
+  <nav class="tabs">
+    <button class="tab active" data-tab="treasure">法宝</button>
+    <button class="tab" data-tab="alchemy">炼丹</button>
+    <button class="tab" data-tab="adventure">历练</button>
+    <button class="tab" data-tab="achievement">成就</button>
+  </nav>
+  <div class="panel-wrap">
+    <section class="panel" id="panel-treasure"></section>
+    <section class="panel hidden" id="panel-alchemy"></section>
+    <section class="panel hidden" id="panel-adventure"></section>
+    <section class="panel hidden" id="panel-achievement"></section>
+  </div>
+  <div class="log-wrap" id="log"></div>
 </div>
-<div class="ups" id="ups"></div>
-<div id="msg"></div>
-<div class="hint">挂机自动攒灵气 → 够了点突破升境界 → 买法宝提速。关页面也算时间，存档本地。</div>
-
+<canvas id="fx"></canvas>
 <script>
-const REALMS = [
-  { name: '练气一层', cost: 50,     rate: 1 },
-  { name: '练气九层', cost: 300,    rate: 3 },
-  { name: '筑基',     cost: 2000,   rate: 10 },
-  { name: '金丹',     cost: 15000,  rate: 35 },
-  { name: '元婴',     cost: 100000, rate: 120 },
-  { name: '化神',     cost: 800000, rate: 400 },
-  { name: '炼虚',     cost: 6e6,    rate: 1500 },
-  { name: '合体',     cost: 5e7,    rate: 6000 },
-  { name: '大乘',     cost: 4e8,    rate: 25000 },
-  { name: '渡劫飞升', cost: 3e9,    rate: 120000 }
+(function(){
+'use strict';
+
+/* ============ 境界设定：12 阶 ============ */
+var REALMS=[
+  {name:'练气',desc:'初窥门径，吐纳天地灵气',qi:60,rate:1.0,trib:1.00,color:'#86efac'},
+  {name:'筑基',desc:'道基初成，灵台清明',qi:280,rate:1.8,trib:0.96,color:'#67e8f9'},
+  {name:'金丹',desc:'凝气成丹，寿元渐长',qi:1400,rate:3.2,trib:0.88,color:'#fcd34d'},
+  {name:'元婴',desc:'丹碎婴生，神通初显',qi:7000,rate:5.5,trib:0.80,color:'#f0abfc'},
+  {name:'化神',desc:'元神出窍，夺天地造化',qi:36000,rate:9.5,trib:0.72,color:'#c4b5fd'},
+  {name:'炼虚',desc:'炼虚合道，肉身无漏',qi:180000,rate:17,trib:0.64,color:'#a5b4fd'},
+  {name:'合体',desc:'元神肉身，合而为一',qi:900000,rate:30,trib:0.55,color:'#fda4af'},
+  {name:'大乘',desc:'道法大成，渡劫在即',qi:4500000,rate:55,trib:0.46,color:'#fdba74'},
+  {name:'渡劫',desc:'九重天劫，生死一线',qi:24000000,rate:100,trib:0.38,color:'#7dd3fc'},
+  {name:'仙人',desc:'飞升仙界，与天同寿',qi:130000000,rate:185,trib:0.30,color:'#fde047'},
+  {name:'金仙',desc:'金仙业位，不朽不灭',qi:700000000,rate:340,trib:0.23,color:'#fef9c3'},
+  {name:'道祖',desc:'掌执大道，万法归一',qi:4000000000,rate:650,trib:0.16,color:'#ffffff'}
 ];
-const UPS = [
-  { key: 'lingshi', name: '💎 灵石矿', base: 15,     rate: 1 },
-  { key: 'juling',  name: '🔮 聚灵阵', base: 120,    rate: 6 },
-  { key: 'danlu',   name: '⚗ 丹炉',   base: 1300,   rate: 30 },
-  { key: 'xianfu',  name: '🏯 洞天府', base: 14000,  rate: 140 },
-  { key: 'lingyao', name: '🌿 灵药园', base: 200000, rate: 780 }
+
+/* ============ 法宝/功法：7 种 ============ */
+var TREASURES=[
+  {id:'t0',name:'聚灵符',seal:'符',desc:'初阶符箓，灵气增速 +60%',cost:120,effect:{rateAdd:0.6}},
+  {id:'t1',name:'紫金葫芦',seal:'葫',desc:'吞吐紫气，灵气增速 +180%',cost:1500,effect:{rateAdd:1.8}},
+  {id:'t2',name:'十二品莲台',seal:'莲',desc:'渡劫时成功率 +20%',cost:4000,effect:{tribAdd:0.20}},
+  {id:'t3',name:'九宫聚灵阵',seal:'阵',desc:'大阵聚灵，灵气增速 ×2',cost:28000,effect:{rateMul:2}},
+  {id:'t4',name:'阴阳八卦镜',seal:'镜',desc:'照破虚妄，渡劫成功率 +30%',cost:65000,effect:{tribAdd:0.30}},
+  {id:'t5',name:'造化玉碟',seal:'碟',desc:'造化之器，渡劫成功率 ×1.35',cost:420000,effect:{tribMul:1.35}},
+  {id:'t6',name:'先天灵宝',seal:'宝',desc:'灵气增速 ×2.5，渡劫率 +12%',cost:2600000,effect:{rateMul:2.5,tribAdd:0.12}}
 ];
-const KEY = 'xian_v1';
-let state = JSON.parse(localStorage.getItem(KEY) || 'null') || { qi: 0, realm: 0, ups: {}, t: Date.now() };
-UPS.forEach(function (u) { if (state.ups[u.key] == null) state.ups[u.key] = 0; });
 
-function save() { state.t = Date.now(); localStorage.setItem(KEY, JSON.stringify(state)); }
-function fmt(n) {
-  n = Math.floor(n);
-  if (n < 1e4) return '' + n;
-  if (n < 1e8) return (n / 1e4).toFixed(n < 1e5 ? 1 : 0) + '万';
-  if (n < 1e12) return (n / 1e8).toFixed(2) + '亿';
-  return (n / 1e12).toFixed(2) + '兆';
+/* ============ 丹药：3 种 ============ */
+var PILLS=[
+  {id:'p0',name:'聚气丹',seal:'气',desc:'服用后 60 秒，灵气产出 ×3',cost:600,dur:60,effect:{rateMul:3}},
+  {id:'p1',name:'悟道丹',seal:'悟',desc:'服用后 60 秒，渡劫成功率 +30%',cost:3200,dur:60,effect:{tribAdd:0.30}},
+  {id:'p2',name:'护体金丹',seal:'护',desc:'渡劫失败时自动转为成功（消耗一颗）',cost:16000,dur:0,effect:{protect:true}}
+];
+
+/* ============ 奇遇事件 ============ */
+var EVENTS=[
+  {name:'上古秘境',desc:'误入秘境，灵气汹涌而入',type:'qi',value:0.25,good:true},
+  {name:'灵脉暴动',desc:'灵气暴走，意外大丰收',type:'qi',value:0.55,good:true},
+  {name:'顿悟',desc:'灵光乍现，悟性大增',type:'rate',dur:120,good:true},
+  {name:'仙缘巧合',desc:'前辈遗留法宝现世',type:'treasure',good:true},
+  {name:'天材地宝',desc:'采得一枚古丹',type:'pill',good:true},
+  {name:'心魔来袭',desc:'心魔侵扰，灵气流失',type:'qi_loss',value:0.12,good:false},
+  {name:'走火入魔',desc:'岔气逆行，经脉受阻',type:'rate_down',dur:60,good:false}
+];
+
+/* ============ 成就 ============ */
+var ACHIEVEMENTS=[
+  {id:'a0',name:'初入仙门',desc:'首次突破境界',test:function(s){return s.realm>=1;}},
+  {id:'a1',name:'筑基有成',desc:'达到筑基境',test:function(s){return s.realm>=2;}},
+  {id:'a2',name:'金丹大道',desc:'结成金丹',test:function(s){return s.realm>=3;}},
+  {id:'a3',name:'元婴出窍',desc:'元婴大成',test:function(s){return s.realm>=4;}},
+  {id:'a4',name:'化神通天',desc:'化神境',test:function(s){return s.realm>=5;}},
+  {id:'a5',name:'炼虚合道',desc:'炼虚境',test:function(s){return s.realm>=6;}},
+  {id:'a6',name:'合体归一',desc:'合体境',test:function(s){return s.realm>=7;}},
+  {id:'a7',name:'大乘圆满',desc:'大乘境',test:function(s){return s.realm>=8;}},
+  {id:'a8',name:'渡劫飞升',desc:'渡劫成功',test:function(s){return s.realm>=9;}},
+  {id:'a9',name:'位列仙班',desc:'成就仙人',test:function(s){return s.realm>=10;}},
+  {id:'a10',name:'金仙业位',desc:'成就金仙',test:function(s){return s.realm>=11;}},
+  {id:'a11',name:'道祖归来',desc:'证道道祖',test:function(s){return s.realm>=12;}},
+  {id:'a12',name:'炼丹初成',desc:'第一次炼丹',test:function(s){return s.alchemyCount>=1;}},
+  {id:'a13',name:'百劫不侵',desc:'成功渡劫 3 次',test:function(s){return s.tribSuccess>=3;}},
+  {id:'a14',name:'灵气盈门',desc:'累计灵气过亿',test:function(s){return s.totalQi>=1e8;}},
+  {id:'a15',name:'法宝满堂',desc:'集齐所有法宝',test:function(s){return s.treasures.length>=TREASURES.length;}},
+  {id:'a16',name:'轮回之人',desc:'重入轮回',test:function(s){return s.rebirth>=1;}},
+  {id:'a17',name:'闲来无事',desc:'点击道果 100 次',test:function(s){return s.clickCount>=100;}}
+];
+
+var SAVE_KEY='xiuxian_save_v2';
+var OFFLINE_EFF=0.5;        // 离线/后台效率
+var OFFLINE_CAP=12*3600;    // 离线封顶 12 小时
+var ADV_CD=120;             // 历练冷却秒数
+
+/* ============ 游戏状态 ============ */
+var state={
+  qi:0, realm:0, totalQi:0,
+  treasures:[], pills:{p0:0,p1:0,p2:0},
+  buffs:[], rebirth:0,
+  achievements:[], muted:false,
+  lastSave:Date.now(), breaking:false,
+  adventureCd:0,
+  tribSuccess:0, tribFail:0, alchemyCount:0, clickCount:0,
+  maxOfflineGain:0, activeTab:'treasure'
+};
+
+var pendingOfflineMsg=null;
+
+/* ============ 工具函数 ============ */
+function el(tag,cls,txt){
+  var e=document.createElement(tag);
+  if(cls)e.className=cls;
+  if(txt!=null)e.textContent=txt;
+  return e;
 }
-function rate() { return REALMS[state.realm].rate + UPS.reduce(function (s, u) { return s + u.rate * state.ups[u.key]; }, 0); }
-function upPrice(u) { return Math.ceil(u.base * Math.pow(1.15, state.ups[u.key])); }
-
-function settleOffline() {
-  const now = Date.now();
-  const dt = (now - (state.t || now)) / 1000;
-  if (dt > 5) {
-    const gain = dt * rate();
-    state.qi += gain;
-  }
-  state.t = now;
+function fmt(n){
+  if(n<10000)return Math.floor(n).toString();
+  if(n<1e8)return (n/1e4).toFixed(2)+'万';
+  if(n<1e12)return (n/1e8).toFixed(2)+'亿';
+  return (n/1e12).toFixed(2)+'兆';
+}
+function hexA(hex,a){
+  var h=hex.replace('#','');
+  var r=parseInt(h.substr(0,2),16),g=parseInt(h.substr(2,2),16),b=parseInt(h.substr(4,2),16);
+  return 'rgba('+r+','+g+','+b+','+a+')';
 }
 
-function render() {
-  const r = rate();
-  const realm = REALMS[state.realm];
-  const next = REALMS[state.realm + 1];
-  document.getElementById('qi').textContent = fmt(state.qi);
-  document.getElementById('rate').textContent = fmt(r);
-  document.getElementById('realm').textContent = '境界：' + realm.name;
-  document.getElementById('manual').textContent = fmt(Math.max(5, Math.floor(r * 3)));
-  const breakBtn = document.getElementById('breakBtn');
-  if (next) {
-    document.getElementById('bar').style.width = Math.min(100, state.qi / next.cost * 100) + '%';
-    breakBtn.disabled = state.qi < next.cost;
-    breakBtn.textContent = '✨ 突破 (' + fmt(next.cost) + ')';
-  } else {
-    document.getElementById('bar').style.width = '100%';
-    breakBtn.disabled = true;
-    breakBtn.textContent = '🏆 已渡劫飞升';
+/* ============ 音效（Web Audio 现场合成） ============ */
+var actx=null;
+function audioCtx(){
+  if(!actx){
+    try{actx=new (window.AudioContext||window.webkitAudioContext)();}catch(e){return null;}
   }
-  const el = document.getElementById('ups');
-  el.innerHTML = '';
-  UPS.forEach(function (u) {
-    const cnt = state.ups[u.key];
-    const price = upPrice(u);
-    const div = document.createElement('div');
-    div.className = 'up';
-    const info = document.createElement('div');
-    info.className = 'info';
-    const b = document.createElement('b');
-    b.textContent = u.name + ' ×' + cnt;
-    const sp = document.createElement('span');
-    sp.textContent = ' +' + u.rate + '/秒  价 ' + fmt(price) + ' 灵气';
-    info.appendChild(b);
-    info.appendChild(document.createElement('br'));
-    info.appendChild(sp);
-    const btn = document.createElement('button');
-    btn.textContent = '修炼';
-    btn.disabled = state.qi < price;
-    btn.onclick = function () { buy(u); };
-    div.appendChild(info);
-    div.appendChild(btn);
-    el.appendChild(div);
+  return actx;
+}
+function tone(freq,dur,type,gain,delay){
+  if(state.muted)return;
+  var ctx=audioCtx(); if(!ctx)return;
+  var t0=ctx.currentTime+(delay||0);
+  var osc=ctx.createOscillator(),g=ctx.createGain();
+  osc.type=type||'sine';
+  osc.frequency.setValueAtTime(freq,t0);
+  g.gain.setValueAtTime(0,t0);
+  g.gain.linearRampToValueAtTime(gain||0.15,t0+0.012);
+  g.gain.exponentialRampToValueAtTime(0.0008,t0+dur);
+  osc.connect(g);g.connect(ctx.destination);
+  osc.start(t0);osc.stop(t0+dur+0.02);
+}
+function noiseBurst(dur,gain,cut){
+  if(state.muted)return;
+  var ctx=audioCtx(); if(!ctx)return;
+  var buf=ctx.createBuffer(1,Math.max(1,ctx.sampleRate*dur),ctx.sampleRate);
+  var d=buf.getChannelData(0);
+  for(var i=0;i<d.length;i++)d[i]=(Math.random()*2-1)*(1-i/d.length);
+  var src=ctx.createBufferSource();src.buffer=buf;
+  var g=ctx.createGain();g.gain.value=gain;
+  var f=ctx.createBiquadFilter();f.type='lowpass';f.frequency.value=cut||900;
+  src.connect(f);f.connect(g);g.connect(ctx.destination);
+  src.start();
+}
+var sfx={
+  tick:function(){tone(660,0.06,'sine',0.04);},
+  gain:function(){tone(880,0.08,'triangle',0.05);},
+  buy:function(){tone(523,0.1,'square',0.06);tone(784,0.12,'square',0.05,0.08);},
+  breakthrough:function(){[523,659,784,1047,1318].forEach(function(f,i){tone(f,0.32,'sine',0.12,i*0.1);});},
+  tribulation:function(){noiseBurst(0.5,0.18,700);tone(110,0.6,'sawtooth',0.1);tone(82,0.7,'sawtooth',0.08,0.05);},
+  alchemy:function(){tone(440,0.13,'triangle',0.07);tone(587,0.14,'triangle',0.06,0.1);tone(740,0.18,'triangle',0.05,0.2);},
+  event:function(){[784,988,1318,1568].forEach(function(f,i){tone(f,0.2,'sine',0.08,i*0.06);});},
+  fail:function(){tone(220,0.3,'sawtooth',0.1);tone(165,0.45,'sawtooth',0.08,0.12);noiseBurst(0.3,0.08,400);},
+  rebirth:function(){[392,523,659,784,1047,1318].forEach(function(f,i){tone(f,0.4,'sine',0.1,i*0.12);});}
+};
+
+/* ============ 数值计算 ============ */
+function activeBuffs(){
+  var now=Date.now();
+  return state.buffs.filter(function(b){return b.until>now;});
+}
+function cleanBuffs(){
+  var now=Date.now();
+  state.buffs=state.buffs.filter(function(b){return b.until>now;});
+}
+function hasTreasure(id){return state.treasures.indexOf(id)>=0;}
+function computeRate(){
+  var r=REALMS[state.realm].rate;
+  var add=0,mul=1;
+  TREASURES.forEach(function(t){
+    if(hasTreasure(t.id)){
+      if(t.effect.rateAdd)add+=t.effect.rateAdd;
+      if(t.effect.rateMul)mul*=t.effect.rateMul;
+    }
+  });
+  activeBuffs().forEach(function(b){if(b.type==='rateMul')mul*=b.value;});
+  mul*=(1+0.3*state.rebirth);  // 轮回传承
+  return r*(1+add)*mul;
+}
+function computeTribRate(){
+  var base=REALMS[state.realm].trib;
+  var add=0,mul=1;
+  TREASURES.forEach(function(t){
+    if(hasTreasure(t.id)){
+      if(t.effect.tribAdd)add+=t.effect.tribAdd;
+      if(t.effect.tribMul)mul*=t.effect.tribMul;
+    }
+  });
+  activeBuffs().forEach(function(b){if(b.type==='tribAdd')add+=b.value;});
+  return Math.min(0.95,Math.max(0.02,(base+add)*mul));
+}
+
+/* ============ 渲染 ============ */
+function renderHud(){
+  document.getElementById('realm-name').textContent=REALMS[state.realm].name;
+  document.getElementById('realm-desc').textContent=REALMS[state.realm].desc;
+  var rate=computeRate();
+  var rs=rate<10?rate.toFixed(1):Math.round(rate);
+  var bs=activeBuffs();
+  var buffTxt=bs.length?'  ·  加持 '+bs.length+' 道':'';
+  document.getElementById('rate-line').textContent='灵气 '+rs+' / 秒'+buffTxt;
+  document.getElementById('mute-btn').textContent=state.muted?'声 关':'声 开';
+  var shi=document.getElementById('shi-tag');
+  shi.textContent=state.rebirth>0?('第 '+(state.rebirth+1)+' 世'):'';
+}
+function updateProgress(){
+  var bar=document.getElementById('progress-bar');
+  if(state.realm>=REALMS.length-1){bar.style.width='100%';return;}
+  var cost=REALMS[state.realm].qi;
+  bar.style.width=Math.min(100,state.qi/cost*100)+'%';
+}
+function renderBreakBtn(){
+  var wrap=document.getElementById('break-wrap');
+  wrap.textContent='';
+  if(state.breaking){
+    wrap.appendChild(el('div','breaking-text','天劫降临中'));
+    return;
+  }
+  if(state.realm>=REALMS.length-1){
+    var rb=el('button','break-btn rebirth-btn','');
+    if(rebirthConfirm){
+      rb.appendChild(el('div','bb-main','再点一次 · 确认重入轮回'));
+      rb.appendChild(el('div','bb-sub','将重置境界/法宝/灵气，传承永久保留'));
+    }else{
+      rb.appendChild(el('div','bb-main','已证道祖 · 重入轮回'));
+      rb.appendChild(el('div','bb-sub','每世永久 +30% 灵气增速（当前 '+state.rebirth+' 世）'));
+    }
+    rb.addEventListener('click',rebirth);
+    wrap.appendChild(rb);
+    return;
+  }
+  var next=REALMS[state.realm+1];
+  var cost=REALMS[state.realm].qi;
+  var rate=computeTribRate();
+  var can=state.qi>=cost;
+  var btn=el('button','break-btn'+(can?'':' locked'),'');
+  btn.appendChild(el('div','bb-main','渡劫突破 · '+next.name));
+  btn.appendChild(el('div','bb-sub','消耗 '+fmt(cost)+' 灵气 · 成功率 '+Math.round(rate*100)+'%'));
+  if(!can)btn.disabled=true;
+  else btn.addEventListener('click',attemptBreakthrough);
+  wrap.appendChild(btn);
+  if(state.pills.p2>0){
+    wrap.appendChild(el('div','break-info','护体金丹 ×'+state.pills.p2+'（失败自动护身）'));
+  }
+}
+
+function renderTreasure(){
+  var p=document.getElementById('panel-treasure');p.textContent='';
+  TREASURES.forEach(function(t){
+    var owned=hasTreasure(t.id);
+    var card=el('div','item-card'+(owned?' owned':''));
+    card.appendChild(el('div','item-seal',t.seal));
+    var body=el('div','item-body');
+    body.appendChild(el('div','item-name',t.name));
+    body.appendChild(el('div','item-desc',t.desc));
+    if(!owned)body.appendChild(el('div','item-meta','炼制消耗 '+fmt(t.cost)+' 灵气'));
+    else body.appendChild(el('div','item-meta','已炼成'));
+    card.appendChild(body);
+    var btn=el('button','buy-btn',owned?'已拥有':('炼制 '+fmt(t.cost)));
+    btn.setAttribute('data-cost',t.cost);
+    if(owned){btn.disabled=true;}
+    else{
+      btn.classList.toggle('cant',state.qi<t.cost);
+      btn.addEventListener('click',function(){buyTreasure(t);});
+    }
+    card.appendChild(btn);
+    p.appendChild(card);
+  });
+}
+function renderAlchemy(){
+  var p=document.getElementById('panel-alchemy');p.textContent='';
+  var intro=el('div','item-card');
+  intro.appendChild(el('div','item-seal','丹'));
+  var ib=el('div','item-body');
+  ib.appendChild(el('div','item-name','丹炉'));
+  ib.appendChild(el('div','item-desc','以灵气为引，炼制丹药辅助修行'));
+  intro.appendChild(ib);
+  p.appendChild(intro);
+  PILLS.forEach(function(pl){
+    var card=el('div','item-card');
+    card.appendChild(el('div','item-seal',pl.seal));
+    var body=el('div','item-body');
+    body.appendChild(el('div','item-name',pl.name+'（持有 '+state.pills[pl.id]+'）'));
+    body.appendChild(el('div','item-desc',pl.desc));
+    body.appendChild(el('div','item-meta','炼制消耗 '+fmt(pl.cost)+' 灵气'));
+    card.appendChild(body);
+    var col=el('div','item-col');
+    col.style.cssText='display:flex;flex-direction:column;gap:5px;flex:none;';
+    var brew=el('button','buy-btn','炼制');
+    brew.setAttribute('data-cost',pl.cost);
+    brew.classList.toggle('cant',state.qi<pl.cost);
+    brew.addEventListener('click',function(){brewPill(pl);});
+    col.appendChild(brew);
+    if(pl.id!=='p2'){
+      var use=el('button','buy-btn','服用');
+      use.style.borderColor='rgba(124,58,237,.5)';
+      use.style.background='rgba(124,58,237,.15)';
+      use.style.color='var(--purple2)';
+      if(state.pills[pl.id]<=0)use.disabled=true;
+      else use.addEventListener('click',function(){usePill(pl);});
+      col.appendChild(use);
+    }
+    card.appendChild(col);
+    p.appendChild(card);
+  });
+}
+function renderAdventure(){
+  var p=document.getElementById('panel-adventure');p.textContent='';
+  var card=el('div','adv-card');
+  card.appendChild(el('div','adv-title','红尘历练'));
+  card.appendChild(el('div','adv-desc','外出云游四方，机缘与凶险并存。\n每两时可历练一次，成败皆修行。'));
+  var btn=el('button','adv-btn','云游历练');btn.id='adv-btn';
+  btn.addEventListener('click',goAdventure);
+  card.appendChild(btn);
+  p.appendChild(card);
+  var tips=el('div','adv-tips');
+  ['秘境、顿悟、仙缘、天材地宝——机缘天降','心魔、走火入魔——凶险暗藏','道心坚韧者，方能于红尘中证道'].forEach(function(t){
+    tips.appendChild(el('div','adv-tip-line','· '+t));
+  });
+  p.appendChild(tips);
+  updateAdventureCd();
+}
+function updateAdventureCd(){
+  var b=document.getElementById('adv-btn');if(!b)return;
+  if(state.adventureCd>0){
+    b.disabled=true;
+    b.textContent='元气未复 · '+Math.ceil(state.adventureCd)+'秒';
+  }else{
+    b.disabled=false;
+    b.textContent='云游历练';
+  }
+}
+function renderAchievement(){
+  var p=document.getElementById('panel-achievement');p.textContent='';
+  var unlocked=state.achievements.length,total=ACHIEVEMENTS.length;
+  var head=el('div','adv-card');
+  head.appendChild(el('div','adv-title','修行印记'));
+  head.appendChild(el('div','adv-desc','已证 '+unlocked+' / '+total+' 道'));
+  p.appendChild(head);
+  var grid=el('div','achv-grid');
+  ACHIEVEMENTS.forEach(function(a){
+    var done=state.achievements.indexOf(a.id)>=0;
+    var c=el('div','achv'+(done?' done':''));
+    c.appendChild(el('div','achv-name',(done?'【已证】':'【未证】')+a.name));
+    c.appendChild(el('div','achv-desc',a.desc));
+    grid.appendChild(c);
+  });
+  p.appendChild(grid);
+}
+function renderActivePanel(){
+  var n=state.activeTab||'treasure';
+  if(n==='treasure')renderTreasure();
+  else if(n==='alchemy')renderAlchemy();
+  else if(n==='adventure')renderAdventure();
+  else if(n==='achievement')renderAchievement();
+}
+function updateAfford(){
+  var btns=document.querySelectorAll('.buy-btn[data-cost]');
+  for(var i=0;i<btns.length;i++){
+    var b=btns[i];
+    if(b.disabled)continue;
+    var cost=parseFloat(b.getAttribute('data-cost'));
+    b.classList.toggle('cant',state.qi<cost);
+  }
+}
+function render(){
+  renderHud();
+  renderBreakBtn();
+  renderActivePanel();
+  updateProgress();
+}
+
+/* ============ 浮动数字 ============ */
+function floatGain(amount){
+  if(amount<=0)return;
+  var holder=document.getElementById('qi-float');
+  // 小额收益用一位小数，避免显示 +0
+  var txt=amount<100?('+'+amount.toFixed(1)):('+'+fmt(amount));
+  var d=el('div','float-text',txt);
+  d.style.left=(-24+Math.random()*20)+'px';
+  holder.appendChild(d);
+  setTimeout(function(){if(d.parentNode)d.parentNode.removeChild(d);},1400);
+}
+
+/* ============ 行为 ============ */
+function buyTreasure(t){
+  if(hasTreasure(t.id)||state.qi<t.cost)return;
+  state.qi-=t.cost;
+  state.treasures.push(t.id);
+  sfx.buy();
+  log('炼成法宝：'+t.name,'good');
+  checkAchievements();render();save();
+}
+function brewPill(pl){
+  if(state.qi<pl.cost)return;
+  state.qi-=pl.cost;
+  state.pills[pl.id]++;
+  state.alchemyCount++;
+  sfx.alchemy();
+  log('炼丹有成：'+pl.name+'（持有 '+state.pills[pl.id]+' 颗）','good');
+  checkAchievements();render();save();
+}
+function usePill(pl){
+  if(pl.id==='p2')return;
+  if(state.pills[pl.id]<=0)return;
+  state.pills[pl.id]--;
+  var now=Date.now();
+  if(pl.id==='p0'){
+    state.buffs.push({type:'rateMul',value:pl.effect.rateMul,until:now+pl.dur*1000});
+    log('服下'+pl.name+'，灵气翻涌，'+pl.dur+'秒内产出 ×'+pl.effect.rateMul,'good');
+  }else if(pl.id==='p1'){
+    state.buffs.push({type:'tribAdd',value:pl.effect.tribAdd,until:now+pl.dur*1000});
+    log('服下'+pl.name+'，神识清明，'+pl.dur+'秒内渡劫率 +'+Math.round(pl.effect.tribAdd*100)+'%','good');
+  }
+  sfx.alchemy();cleanBuffs();render();save();
+}
+function attemptBreakthrough(){
+  if(state.breaking)return;
+  var cost=REALMS[state.realm].qi;
+  if(state.qi<cost)return;
+  var rate=computeTribRate();
+  var success=Math.random()<rate;
+  var protectedBy=false;
+  if(!success&&state.pills.p2>0){
+    state.pills.p2--;success=true;protectedBy=true;
+  }
+  runTribulation(success,function(){
+    if(success){
+      state.qi-=cost;
+      state.realm++;
+      state.tribSuccess++;
+      sfx.breakthrough();
+      var r=REALMS[state.realm];
+      log('渡劫成功！晋升『'+r.name+'』'+(protectedBy?'（护体金丹护身）':''),'epic');
+    }else{
+      var loss=cost*0.25;
+      state.qi=Math.max(0,state.qi-loss);
+      state.tribFail++;
+      log('天劫加身，渡劫失败！损失 '+fmt(loss)+' 灵气','bad');
+    }
+    checkAchievements();render();save();
+  });
+}
+function goAdventure(){
+  if(state.adventureCd>0)return;
+  var ev=EVENTS[Math.floor(Math.random()*EVENTS.length)];
+  applyEvent(ev);
+  state.adventureCd=ADV_CD;
+  render();save();
+}
+function applyEvent(ev){
+  sfx.event();
+  var cost=REALMS[state.realm].qi;
+  if(ev.type==='qi'){
+    var g=cost*ev.value;
+    state.qi+=g;state.totalQi+=g;
+    log(ev.name+'：'+ev.desc+'（+'+fmt(g)+' 灵气）','good');
+  }else if(ev.type==='rate'){
+    state.buffs.push({type:'rateMul',value:2,until:Date.now()+ev.dur*1000});
+    log(ev.name+'：'+ev.desc+'（'+ev.dur+'秒内灵气 ×2）','good');
+  }else if(ev.type==='treasure'){
+    var un=TREASURES.filter(function(t){return !hasTreasure(t.id);});
+    if(un.length){
+      var t=un[0];state.treasures.push(t.id);
+      log(ev.name+'：'+ev.desc+'（获得『'+t.name+'』）','epic');
+    }else{
+      var g2=cost*0.3;state.qi+=g2;state.totalQi+=g2;
+      log(ev.name+'：法宝已齐，化为 '+fmt(g2)+' 灵气','good');
+    }
+  }else if(ev.type==='qi_loss'){
+    var loss=state.qi*ev.value;
+    state.qi=Math.max(0,state.qi-loss);
+    log(ev.name+'：'+ev.desc+'（-'+fmt(loss)+' 灵气）','bad');
+  }else if(ev.type==='rate_down'){
+    state.buffs.push({type:'rateMul',value:0.5,until:Date.now()+ev.dur*1000});
+    log(ev.name+'：'+ev.desc+'（'+ev.dur+'秒内灵气 ×0.5）','bad');
+  }else if(ev.type==='pill'){
+    var pid=['p0','p1','p2'][Math.floor(Math.random()*3)];
+    state.pills[pid]++;
+    log(ev.name+'：'+ev.desc+'（获得一颗丹药）','good');
+  }
+  checkAchievements();
+}
+var rebirthConfirm=false;
+function rebirth(){
+  if(state.realm<REALMS.length-1)return;
+  if(!rebirthConfirm){
+    rebirthConfirm=true;renderBreakBtn();
+    setTimeout(function(){rebirthConfirm=false;renderBreakBtn();},3000);
+    return;
+  }
+  rebirthConfirm=false;
+  state.rebirth++;
+  state.realm=0;state.qi=0;state.treasures=[];
+  state.pills={p0:0,p1:0,p2:0};state.buffs=[];state.adventureCd=0;
+  log('重入轮回，第 '+(state.rebirth+1)+' 世修行开始。传承永久 +30% 增速。','epic');
+  sfx.rebirth();
+  checkAchievements();render();save();
+}
+function checkAchievements(){
+  ACHIEVEMENTS.forEach(function(a){
+    if(state.achievements.indexOf(a.id)<0&&a.test(state)){
+      state.achievements.push(a.id);
+      log('成就解锁：'+a.name,'ach');
+      sfx.event();
+    }
   });
 }
 
-function cultivate() {
-  const gain = Math.max(5, Math.floor(rate() * 3));
-  state.qi += gain;
-  save(); render();
-  document.getElementById('msg').textContent = '打坐 +' + fmt(gain) + ' 灵气';
-}
-function doBreak() {
-  const next = REALMS[state.realm + 1];
-  if (!next || state.qi < next.cost) return;
-  state.qi -= next.cost;
-  state.realm++;
-  save(); render();
-  document.getElementById('msg').textContent = '✨ 突破成功！踏入「' + REALMS[state.realm].name + '」';
-}
-function buy(u) {
-  const price = upPrice(u);
-  if (state.qi < price) return;
-  state.qi -= price;
-  state.ups[u.key]++;
-  save(); render();
-  document.getElementById('msg').textContent = '获得 ' + u.name + '（+' + u.rate + '/秒）';
+/* ============ 日志 ============ */
+function log(msg,cls){
+  var box=document.getElementById('log');
+  var d=el('div','log-line'+(cls?' log-'+cls:''),msg);
+  box.appendChild(d);
+  box.scrollTop=box.scrollHeight;
+  while(box.childNodes.length>40)box.removeChild(box.firstChild);
 }
 
-settleOffline();
-render();
-setInterval(function () { state.qi += rate(); render(); }, 1000);
-setInterval(save, 5000);
-window.addEventListener('beforeunload', save);
+/* ============ 存档 / 离线 ============ */
+function save(){
+  state.lastSave=Date.now();
+  try{localStorage.setItem(SAVE_KEY,JSON.stringify(state));}catch(e){}
+}
+function load(){
+  try{
+    var raw=localStorage.getItem(SAVE_KEY);
+    if(raw){
+      var s=JSON.parse(raw);
+      Object.keys(s).forEach(function(k){state[k]=s[k];});
+    }
+  }catch(e){}
+  if(!state.pills)state.pills={p0:0,p1:0,p2:0};
+  if(!state.buffs)state.buffs=[];
+  if(!state.treasures)state.treasures=[];
+  if(!state.achievements)state.achievements=[];
+  if(!state.activeTab)state.activeTab='treasure';
+  // 离线结算
+  var now=Date.now();
+  var elapsed=(now-(state.lastSave||now))/1000;
+  if(elapsed>10){
+    var secs=Math.min(elapsed,OFFLINE_CAP);
+    var og=computeRate()*secs*OFFLINE_EFF;
+    if(og>0){
+      state.qi+=og;state.totalQi+=og;
+      if(og>state.maxOfflineGain)state.maxOfflineGain=og;
+      pendingOfflineMsg='闭关 '+Math.round(secs/60)+' 分钟，静修得灵气 '+fmt(og);
+    }
+  }
+  state.lastSave=now;
+  state.breaking=false;  // 重载时不在渡劫中
+}
+
+/* ============ Canvas 动画 ============ */
+var bgCtx,bgW,bgH,coreCtx,coreCx,coreCy,coreR,coreW,coreH,fxCtx,fxW,fxH;
+var stars=[],motes=[];
+
+function fitCanvas(c){
+  var dpr=window.devicePixelRatio||1;
+  var r=c.getBoundingClientRect();
+  c.width=Math.max(1,Math.round(r.width*dpr));
+  c.height=Math.max(1,Math.round(r.height*dpr));
+  var ctx=c.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {ctx:ctx,w:r.width,h:r.height};
+}
+function fitAll(){
+  var b=fitCanvas(document.getElementById('bg'));bgCtx=b.ctx;bgW=b.w;bgH=b.h;
+  var co=fitCanvas(document.getElementById('core'));coreCtx=co.ctx;coreW=co.w;coreH=co.h;
+  coreCx=co.w/2;coreCy=co.h/2;coreR=Math.min(co.w,co.h)*0.24;
+  var f=fitCanvas(document.getElementById('fx'));fxCtx=f.ctx;fxW=f.w;fxH=f.h;
+}
+function initStars(){
+  stars=[];
+  for(var i=0;i<150;i++){
+    stars.push({x:Math.random(),y:Math.random(),r:Math.random()*1.3+0.3,
+      tw:Math.random()*6.283,sp:Math.random()*0.6+0.2,hue:Math.random()<0.3?40:260});
+  }
+}
+function drawBg(ctx,w,h,now){
+  ctx.clearRect(0,0,w,h);
+  // 星点
+  for(var i=0;i<stars.length;i++){
+    var s=stars[i];
+    var tw=0.35+0.65*Math.abs(Math.sin(now*0.001*s.sp+s.tw));
+    var col=s.hue===40?'rgba(253,224,71,'+(tw*0.7)+')':'rgba(210,190,255,'+(tw*0.75)+')';
+    ctx.fillStyle=col;
+    ctx.beginPath();ctx.arc(s.x*w,s.y*h,s.r,0,6.283);ctx.fill();
+  }
+  // 漂浮灵气微粒
+  if(Math.random()<0.25){
+    motes.push({x:Math.random(),y:1.05,vy:-(Math.random()*0.0007+0.0003),
+      r:Math.random()*2+1,life:1,hue:255+Math.random()*70});
+  }
+  for(var j=motes.length-1;j>=0;j--){
+    var m=motes[j];
+    m.y+=m.vy;m.life-=0.0028;
+    if(m.life<=0||m.y<-0.1){motes.splice(j,1);continue;}
+    var g=ctx.createRadialGradient(m.x*w,m.y*h,0,m.x*w,m.y*h,m.r*5);
+    g.addColorStop(0,'hsla('+m.hue+',85%,72%,'+(m.life*0.5)+')');
+    g.addColorStop(1,'hsla('+m.hue+',85%,72%,0)');
+    ctx.fillStyle=g;
+    ctx.beginPath();ctx.arc(m.x*w,m.y*h,m.r*5,0,6.283);ctx.fill();
+  }
+}
+function drawCore(ctx,cx,cy,R,now){
+  var realm=REALMS[state.realm];
+  var color=realm.color;
+  ctx.clearRect(0,0,coreW,coreH);
+  // 外层光晕
+  for(var i=3;i>=1;i--){
+    var rr=R*(1+i*0.45)+Math.sin(now*0.002+i)*4;
+    var g=ctx.createRadialGradient(cx,cy,R*0.4,cx,cy,rr);
+    g.addColorStop(0,hexA(color,0));
+    g.addColorStop(0.55,hexA(color,0.07*i));
+    g.addColorStop(1,hexA(color,0));
+    ctx.fillStyle=g;
+    ctx.beginPath();ctx.arc(cx,cy,rr,0,6.283);ctx.fill();
+  }
+  // 旋转符纹环
+  ctx.save();
+  ctx.translate(cx,cy);
+  ctx.rotate(now*0.00035);
+  ctx.strokeStyle=hexA(color,0.5);
+  ctx.lineWidth=1.4;
+  ctx.setLineDash([5,11]);
+  ctx.beginPath();ctx.arc(0,0,R*1.35,0,6.283);ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.rotate(-now*0.0009);
+  ctx.strokeStyle=hexA('#fde68a',0.35);
+  ctx.lineWidth=1;
+  ctx.setLineDash([2,8]);
+  ctx.beginPath();ctx.arc(0,0,R*1.7,0,6.283);ctx.stroke();
+  ctx.setLineDash([]);
+  // 环绕粒子
+  for(var k=0;k<8;k++){
+    var a=now*0.0011+k*0.785;
+    var px=Math.cos(a)*R*1.35,py=Math.sin(a)*R*1.35;
+    var pg=ctx.createRadialGradient(px,py,0,px,py,4);
+    pg.addColorStop(0,hexA('#fde68a',0.9));
+    pg.addColorStop(1,hexA('#fde68a',0));
+    ctx.fillStyle=pg;
+    ctx.beginPath();ctx.arc(px,py,4,0,6.283);ctx.fill();
+  }
+  ctx.restore();
+  // 核心宝珠
+  var pulse=R*(1+Math.sin(now*0.004)*0.045);
+  var cg=ctx.createRadialGradient(cx-pulse*0.3,cy-pulse*0.35,0,cx,cy,pulse);
+  cg.addColorStop(0,'#ffffff');
+  cg.addColorStop(0.28,hexA(color,0.95));
+  cg.addColorStop(0.7,hexA(color,0.55));
+  cg.addColorStop(1,hexA(color,0.12));
+  ctx.fillStyle=cg;
+  ctx.beginPath();ctx.arc(cx,cy,pulse,0,6.283);ctx.fill();
+  // 宝珠内境界字符（canvas 绘字，安全）
+  ctx.fillStyle=hexA('#ffffff',0.92);
+  ctx.font='bold '+Math.floor(R*0.55)+'px serif';
+  ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(realm.name.charAt(0),cx,cy);
+}
+function drawLightning(x0,y0,x1,y1){
+  var segs=12;
+  fxCtx.strokeStyle='rgba(220,230,255,0.95)';
+  fxCtx.lineWidth=2;
+  fxCtx.shadowColor='rgba(180,200,255,0.9)';fxCtx.shadowBlur=14;
+  fxCtx.beginPath();fxCtx.moveTo(x0,y0);
+  for(var i=1;i<segs;i++){
+    var tt=i/segs;
+    fxCtx.lineTo(x0+(x1-x0)*tt+(Math.random()-0.5)*32,y0+(y1-y0)*tt);
+  }
+  fxCtx.lineTo(x1,y1);fxCtx.stroke();
+  fxCtx.shadowBlur=0;
+}
+function runTribulation(success,cb){
+  state.breaking=true;renderBreakBtn();
+  var start=performance.now();
+  var DUR=2800;
+  var bolts=[];
+  for(var i=0;i<5;i++){
+    bolts.push({at:1150+i*230+Math.random()*160,x:0.2+Math.random()*0.6,drawn:false});
+  }
+  var thundered=false,resolved=false;
+  // 渡劫起始闷雷
+  setTimeout(function(){sfx.tribulation();},1050);
+  function frame(now){
+    var t=now-start;
+    fxCtx.clearRect(0,0,fxW,fxH);
+    // 暗色压顶
+    var dark=Math.min(0.72,t/1300*0.72);
+    if(t>2200)dark*=Math.max(0,1-(t-2200)/500);
+    fxCtx.fillStyle='rgba(8,2,18,'+dark+')';
+    fxCtx.fillRect(0,0,fxW,fxH);
+    // 闪电
+    for(var i=0;i<bolts.length;i++){
+      var b=bolts[i];
+      if(t>b.at&&t<b.at+240){
+        drawLightning(b.x*fxW,0,b.x*fxW+(Math.random()-0.5)*50,fxH*0.62);
+        fxCtx.fillStyle='rgba(200,220,255,0.13)';
+        fxCtx.fillRect(0,0,fxW,fxH);
+        if(!b.drawn)b.drawn=true;
+      }
+    }
+    // 结算爆发
+    if(t>2050&&t<2700){
+      var rt=(t-2050)/650;
+      var cx=fxW/2,cy=fxH/2;
+      if(success){
+        for(var ring=0;ring<3;ring++){
+          var rr=rt*fxW*(0.32+ring*0.22);
+          fxCtx.strokeStyle='rgba(253,224,71,'+(0.65*(1-rt))+')';
+          fxCtx.lineWidth=3;
+          fxCtx.beginPath();fxCtx.arc(cx,cy,rr,0,6.283);fxCtx.stroke();
+        }
+        var bg2=fxCtx.createRadialGradient(cx,cy,0,cx,cy,fxW*rt);
+        bg2.addColorStop(0,'rgba(253,224,71,'+(0.45*(1-rt))+')');
+        bg2.addColorStop(1,'rgba(253,224,71,0)');
+        fxCtx.fillStyle=bg2;fxCtx.fillRect(0,0,fxW,fxH);
+      }else{
+        fxCtx.strokeStyle='rgba(248,113,113,'+(0.75*(1-rt))+')';
+        fxCtx.lineWidth=2.5;
+        fxCtx.shadowColor='rgba(248,113,113,0.7)';fxCtx.shadowBlur=16;
+        for(var c=0;c<4;c++){
+          var ang=c*1.57+rt;
+          fxCtx.beginPath();
+          fxCtx.moveTo(cx,cy);
+          for(var s=1;s<=8;s++){
+            var ss=s/8;
+            fxCtx.lineTo(cx+Math.cos(ang)*fxW*0.4*ss+(Math.random()-0.5)*14,
+              cy+Math.sin(ang)*fxW*0.4*ss+(Math.random()-0.5)*14);
+          }
+          fxCtx.stroke();
+        }
+        fxCtx.shadowBlur=0;
+      }
+    }
+    if(t<DUR)requestAnimationFrame(frame);
+    else{
+      fxCtx.clearRect(0,0,fxW,fxH);
+      state.breaking=false;cb();
+    }
+  }
+  requestAnimationFrame(frame);
+}
+
+/* ============ 主循环 ============ */
+var lastFrame=performance.now(),floatAcc=0,lastFloatAt=performance.now(),saveAcc=0;
+function loop(now){
+  var dt=(now-lastFrame)/1000;lastFrame=now;
+  if(dt>0){
+    if(dt<10){
+      if(!state.breaking){
+        var g=computeRate()*dt;
+        state.qi+=g;state.totalQi+=g;floatAcc+=g;
+      }
+    }else{
+      // 后台/切走时间，按离线效率补算
+      var secs=Math.min(dt,OFFLINE_CAP);
+      var og=computeRate()*secs*OFFLINE_EFF;
+      state.qi+=og;state.totalQi+=og;
+      if(og>state.maxOfflineGain)state.maxOfflineGain=og;
+      log('闭关 '+Math.round(secs/60)+' 分钟，静修得灵气 '+fmt(og),'good');
+    }
+    if(state.adventureCd>0)state.adventureCd=Math.max(0,state.adventureCd-dt);
+  }
+  if(floatAcc>0&&now-lastFloatAt>900){floatGain(floatAcc);floatAcc=0;lastFloatAt=now;}
+  drawBg(bgCtx,bgW,bgH,now);
+  drawCore(coreCtx,coreCx,coreCy,coreR,now);
+  document.getElementById('qi-num').textContent=fmt(state.qi);
+  updateProgress();
+  saveAcc+=dt;
+  if(saveAcc>8){saveAcc=0;save();}
+  requestAnimationFrame(loop);
+}
+function slowTick(){
+  cleanBuffs();
+  checkAchievements();
+  renderHud();
+  renderBreakBtn();
+  updateAfford();
+  updateAdventureCd();
+}
+
+/* ============ 事件绑定 ============ */
+function bindEvents(){
+  document.getElementById('mute-btn').addEventListener('click',function(){
+    state.muted=!state.muted;
+    if(!state.muted){var c=audioCtx();if(c&&c.state==='suspended')c.resume();sfx.tick();}
+    renderHud();save();
+  });
+  var tabs=document.querySelectorAll('.tab');
+  for(var i=0;i<tabs.length;i++){
+    (function(b){
+      b.addEventListener('click',function(){switchTab(b.dataset.tab);});
+    })(tabs[i]);
+  }
+  document.getElementById('core').addEventListener('click',function(){
+    var c=audioCtx();if(c&&c.state==='suspended')c.resume();
+    state.clickCount++;
+    sfx.tick();
+    if(state.clickCount%10===0){
+      var b=computeRate()*3;
+      state.qi+=b;state.totalQi+=b;floatGain(b);
+      log('心神一震，悟得灵气 '+fmt(b),'good');
+    }
+    checkAchievements();
+  });
+  // 首次交互解锁音频
+  function unlock(){var c=audioCtx();if(c&&c.state==='suspended')c.resume();
+    document.removeEventListener('pointerdown',unlock);}
+  document.addEventListener('pointerdown',unlock);
+  window.addEventListener('resize',function(){fitAll();});
+}
+function switchTab(name){
+  state.activeTab=name;
+  var tabs=document.querySelectorAll('.tab');
+  for(var i=0;i<tabs.length;i++)tabs[i].classList.toggle('active',tabs[i].dataset.tab===name);
+  var ids=['treasure','alchemy','adventure','achievement'];
+  for(var j=0;j<ids.length;j++){
+    document.getElementById('panel-'+ids[j]).classList.toggle('hidden',ids[j]!==name);
+  }
+  renderActivePanel();
+  var pw=document.querySelector('.panel-wrap');if(pw)pw.scrollTop=0;
+}
+
+/* ============ 启动 ============ */
+function init(){
+  load();
+  fitAll();initStars();bindEvents();
+  switchTab(state.activeTab||'treasure');
+  render();
+  log('仙路漫漫，唯修真尔。结庐打坐，积聚灵气。','epic');
+  if(pendingOfflineMsg)log(pendingOfflineMsg,'good');
+  lastFrame=performance.now();lastFloatAt=performance.now();
+  requestAnimationFrame(loop);
+  setInterval(slowTick,1000);
+}
+init();
+
+})();
 </script>
 </body>
 </html>

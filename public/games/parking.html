@@ -2,147 +2,1177 @@
 <html lang="zh-CN">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>抢车位</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>抢车位 · 霓虹夜场</title>
 <style>
-* { box-sizing:border-box; margin:0; padding:0; }
-body { font-family:"Microsoft YaHei","PingFang SC",sans-serif;
-  background:linear-gradient(160deg,#3a3a3a 0%,#2a2a2a 100%);
-  min-height:100vh; padding:14px; color:#eee; user-select:none; }
-h1 { text-align:center; font-size:1.3rem; margin-bottom:8px; color:#ffd54f; }
-.coin { text-align:center; font-size:1.8rem; color:#ffd54f; font-weight:bold; }
-.rate { text-align:center; font-size:.85rem; color:#81c784; margin:4px 0 12px; }
-.shop { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:14px; }
-.shop button { cursor:pointer; border:none; border-radius:10px; padding:8px 10px; background:#424242; color:#fff; font-size:.82rem; line-height:1.4; box-shadow:0 2px 4px rgba(0,0,0,.4); transition:transform .1s; font-family:inherit; text-align:center; }
-.shop button:hover:not(:disabled){ transform:translateY(-2px); }
-.shop button.sel { background:#f57f17; outline:2px solid #ffd54f; }
-.shop button:disabled { opacity:.4; cursor:not-allowed; }
-.slots { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:440px; margin:0 auto; }
-.slot { aspect-ratio:1; background:#1e1e1e; border:3px dashed #ffd54f; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; transition:border-color .15s; }
-.slot:hover { border-color:#fff; }
-.slot .car { font-size:2.4rem; }
-.slot .lbl { font-size:.7rem; color:#bbb; margin-top:4px; text-align:center; }
-.slot.filled { border-style:solid; border-color:#81c784; background:#263238; }
-.slot.filled .lbl { color:#81c784; }
-.expand { display:block; margin:14px auto 0; cursor:pointer; border:none; border-radius:10px; padding:8px 16px; background:#1565c0; color:#fff; font-size:.85rem; font-weight:bold; font-family:inherit; }
-.expand:disabled { opacity:.4; cursor:not-allowed; }
-#msg { text-align:center; margin-top:10px; font-size:.85rem; color:#ffd54f; height:1.2em; font-weight:bold; }
-.hint { font-size:.72rem; opacity:.6; text-align:center; margin-top:8px; line-height:1.5; }
+/* ===== 基础重置 / 霓虹夜景配色 ===== */
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+:root{
+  --bg0:#0a0c18; --bg1:#11142a; --bg2:#1a1e3a;
+  --asphalt:#15172a; --line:#cfd6e6;
+  --ink:#e8ecff; --ink-dim:#9aa3c7; --ink-mute:#5c648c;
+  --gold:#ffd86b; --gold-deep:#e8a93b;
+  --cyan:#5be7ff; --magenta:#ff5bd4; --green:#5dffa8; --red:#ff5b6e;
+  --platinum:#bff0ff;
+  --card:rgba(24,28,54,.72); --card-bd:rgba(120,140,220,.22);
+  --shadow:0 10px 30px rgba(0,0,0,.45);
+}
+html,body{height:100%}
+body{
+  font-family:"PingFang SC","Microsoft YaHei","Hiragino Sans GB",system-ui,sans-serif;
+  background:
+    radial-gradient(1200px 600px at 80% -10%, rgba(255,91,212,.10), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(91,231,255,.10), transparent 60%),
+    linear-gradient(160deg,var(--bg1),var(--bg0));
+  color:var(--ink); overflow:hidden; height:100vh;
+}
+button{font-family:inherit;cursor:pointer;border:none;color:inherit;background:none}
+#app{display:flex;flex-direction:column;height:100vh;max-width:1200px;margin:0 auto}
+
+/* ===== 顶栏 ===== */
+header{
+  display:flex;align-items:center;gap:14px;padding:10px 14px;
+  background:linear-gradient(180deg,rgba(20,24,48,.9),rgba(20,24,48,.55));
+  border-bottom:1px solid var(--card-bd);
+  backdrop-filter:blur(8px);flex-wrap:wrap;
+}
+.brand{display:flex;align-items:center;gap:10px;min-width:0}
+.logo{
+  width:34px;height:34px;border-radius:9px;display:grid;place-items:center;font-weight:800;
+  background:linear-gradient(135deg,var(--magenta),var(--cyan));
+  box-shadow:0 0 16px rgba(255,91,212,.5);color:#0a0c18;font-size:18px;flex:none;
+}
+.brand b{
+  font-size:18px;letter-spacing:1px;
+  background:linear-gradient(90deg,var(--magenta),var(--cyan));
+  -webkit-background-clip:text;background-clip:text;color:transparent;
+}
+.brand small{display:block;font-size:10px;color:var(--ink-mute);letter-spacing:3px;font-weight:600}
+.stats{display:flex;gap:8px;flex:1;justify-content:center;flex-wrap:wrap}
+.stat{
+  background:var(--card);border:1px solid var(--card-bd);border-radius:12px;
+  padding:5px 12px;min-width:92px;text-align:center;box-shadow:var(--shadow);
+}
+.stat .k{font-size:10px;color:var(--ink-mute);letter-spacing:1px}
+.stat .v{font-size:18px;font-weight:800;line-height:1.15}
+.stat .v.gold{color:var(--gold)} .stat .v.cyan{color:var(--cyan)} .stat .v.grn{color:var(--green)}
+.actions{display:flex;gap:6px}
+.act{
+  padding:7px 11px;border-radius:10px;font-size:12px;font-weight:600;
+  background:rgba(91,231,255,.08);border:1px solid rgba(91,231,255,.3);color:var(--cyan);
+  transition:.15s;
+}
+.act:hover{background:rgba(91,231,255,.18);box-shadow:0 0 12px rgba(91,231,255,.4)}
+.act.danger{color:var(--red);border-color:rgba(255,91,110,.35);background:rgba(255,91,110,.06)}
+.act.danger:hover{background:rgba(255,91,110,.18);box-shadow:0 0 12px rgba(255,91,110,.35)}
+/* 经验条 */
+.xpwrap{position:relative;height:7px;width:100%;background:rgba(255,255,255,.07);border-radius:5px;overflow:hidden;margin-top:2px}
+#xpFill{position:absolute;left:0;top:0;height:100%;width:0;border-radius:5px;
+  background:linear-gradient(90deg,var(--green),var(--cyan));box-shadow:0 0 10px rgba(93,255,168,.6);transition:width .4s}
+#xpText{position:absolute;right:6px;top:-16px;font-size:10px;color:var(--ink-mute)}
+
+/* ===== 主区 ===== */
+main{flex:1;display:grid;grid-template-columns:1fr 290px;gap:10px;padding:10px;min-height:0}
+.lot{
+  position:relative;border-radius:16px;overflow:hidden;min-height:0;
+  border:1px solid var(--card-bd);background:#0d0f1e;box-shadow:var(--shadow);
+}
+#lot{display:block;width:100%;height:100%}
+.lot-tag{
+  position:absolute;left:12px;top:10px;font-size:11px;color:var(--ink-dim);
+  background:rgba(0,0,0,.35);padding:3px 9px;border-radius:20px;border:1px solid var(--card-bd);
+  pointer-events:none;
+}
+.lot-hint{
+  position:absolute;left:50%;bottom:12px;transform:translateX(-50%);
+  font-size:12px;color:var(--ink-mute);background:rgba(0,0,0,.4);padding:5px 14px;border-radius:20px;
+  pointer-events:none;border:1px solid var(--card-bd);
+}
+/* 侧栏 */
+aside{display:flex;flex-direction:column;gap:10px;min-height:0;overflow:auto;padding-right:2px}
+.card{
+  background:var(--card);border:1px solid var(--card-bd);border-radius:14px;padding:12px;box-shadow:var(--shadow);
+}
+.card h3{font-size:13px;color:var(--ink-dim);margin-bottom:9px;letter-spacing:1px;display:flex;align-items:center;gap:7px}
+.card h3::before{content:"";width:4px;height:13px;border-radius:3px;background:linear-gradient(var(--magenta),var(--cyan))}
+.kv{display:flex;justify-content:space-between;font-size:13px;padding:4px 0;border-bottom:1px dashed rgba(120,140,220,.14)}
+.kv:last-child{border:none}
+.kv span{color:var(--ink-mute)} .kv b{color:var(--ink);font-weight:700}
+.kv b.g{color:var(--gold)} .kv b.c{color:var(--cyan)}
+.bigbtn{
+  width:100%;padding:11px;border-radius:11px;font-size:14px;font-weight:800;margin-top:6px;
+  background:linear-gradient(135deg,var(--green),#27c97a);color:#06280f;letter-spacing:1px;
+  box-shadow:0 6px 18px rgba(45,200,120,.35);transition:.15s;
+}
+.bigbtn:hover{filter:brightness(1.08);transform:translateY(-1px)}
+.bigbtn:disabled{filter:grayscale(.6) brightness(.6);cursor:not-allowed;transform:none;box-shadow:none}
+.bigbtn.gold{background:linear-gradient(135deg,var(--gold),var(--gold-deep));color:#3a2606;box-shadow:0 6px 18px rgba(232,169,59,.35)}
+.sub{font-size:11px;color:var(--ink-mute);margin-top:7px;line-height:1.5}
+#logList{list-style:none;font-size:12px;line-height:1.5;max-height:150px;overflow:auto}
+#logList li{padding:5px 7px;border-radius:8px;margin-bottom:4px;background:rgba(255,255,255,.03);color:var(--ink-dim)}
+#logList li b{color:var(--ink)} #logList li.bad b{color:var(--red)} #logList li.good b{color:var(--green)}
+#logList li.evt{background:rgba(255,216,107,.07)}
+#buffWrap{display:flex;flex-wrap:wrap;gap:5px;min-height:0}
+#buffWrap:empty::before{content:"当前无加成";font-size:11px;color:var(--ink-mute)}
+.buff{font-size:11px;padding:3px 8px;border-radius:20px;font-weight:700}
+.buff.good{background:rgba(93,255,168,.14);color:var(--green);border:1px solid rgba(93,255,168,.35)}
+.buff.bad{background:rgba(255,91,110,.14);color:var(--red);border:1px solid rgba(255,91,110,.35)}
+
+/* ===== Toast ===== */
+#toastWrap{position:fixed;left:50%;top:64px;transform:translateX(-50%);z-index:50;display:flex;flex-direction:column;gap:8px;align-items:center;pointer-events:none;width:max-content;max-width:92vw}
+.toast{
+  padding:9px 18px;border-radius:30px;font-size:14px;font-weight:700;box-shadow:var(--shadow);
+  background:var(--card);border:1px solid var(--card-bd);color:var(--ink);
+  animation:tin .3s ease, tout .4s ease 2.6s forwards;
+}
+.toast.good{color:var(--green);border-color:rgba(93,255,168,.4)} .toast.bad{color:var(--red);border-color:rgba(255,91,110,.4)}
+.toast.gold{color:var(--gold);border-color:rgba(255,216,107,.45)} .toast.cyan{color:var(--cyan);border-color:rgba(91,231,255,.4)}
+.toast.lvl{font-size:16px;background:linear-gradient(135deg,rgba(255,91,212,.25),rgba(91,231,255,.25));border-color:rgba(255,255,255,.3)}
+@keyframes tin{from{opacity:0;transform:translateY(-12px)}to{opacity:1}}
+@keyframes tout{to{opacity:0;transform:translateY(-12px)}}
+
+/* ===== 弹窗 ===== */
+#overlay{
+  position:fixed;inset:0;z-index:40;background:rgba(6,8,18,.72);backdrop-filter:blur(4px);
+  display:none;align-items:center;justify-content:center;padding:14px;
+}
+#overlay.show{display:flex;animation:fade .2s}
+@keyframes fade{from{opacity:0}to{opacity:1}}
+#modalCard{
+  width:min(560px,100%);max-height:88vh;overflow:auto;border-radius:18px;padding:0;
+  background:linear-gradient(180deg,#1b1f3c,#14172e);border:1px solid var(--card-bd);box-shadow:var(--shadow);
+  animation:pop .25s cubic-bezier(.2,1.2,.4,1);
+}
+@keyframes pop{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+.modalHead{
+  position:sticky;top:0;z-index:2;padding:15px 18px;display:flex;align-items:center;justify-content:space-between;gap:10px;
+  background:linear-gradient(180deg,rgba(27,31,60,.98),rgba(27,31,60,.85));border-bottom:1px solid var(--card-bd);
+}
+.modalHead h2{font-size:17px;letter-spacing:1px}
+.modalHead h2 .tier{font-size:12px;color:var(--gold);margin-left:8px}
+.xbtn{width:30px;height:30px;border-radius:9px;background:rgba(255,255,255,.06);font-size:16px;color:var(--ink-dim)}
+.xbtn:hover{background:rgba(255,91,110,.2);color:var(--red)}
+.modalBody{padding:16px 18px 20px}
+.spotnow{
+  display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;margin-bottom:14px;
+  background:rgba(255,255,255,.04);border:1px solid var(--card-bd);
+}
+.swatch{width:40px;height:40px;border-radius:9px;flex:none;box-shadow:inset 0 -8px 12px rgba(0,0,0,.4),0 2px 8px rgba(0,0,0,.4)}
+.sn-info b{font-size:15px} .sn-info small{display:block;color:var(--ink-mute);font-size:11px;margin-top:2px}
+.sn-inc{margin-left:auto;text-align:right}
+.sn-inc .n{font-size:18px;font-weight:800;color:var(--gold)} .sn-inc .n.c{color:var(--cyan)}
+.sn-inc small{font-size:10px;color:var(--ink-mute)}
+.secttl{font-size:12px;color:var(--ink-dim);letter-spacing:1px;margin:14px 0 8px;display:flex;align-items:center;gap:7px}
+.secttl::after{content:"";flex:1;height:1px;background:var(--card-bd)}
+.carlist{display:grid;gap:8px}
+.carow{
+  display:flex;align-items:center;gap:11px;padding:10px;border-radius:12px;
+  background:rgba(255,255,255,.03);border:1px solid var(--card-bd);transition:.15s;
+}
+.carow:hover{background:rgba(91,231,255,.06);border-color:rgba(91,231,255,.3)}
+.carow.lock{opacity:.45;filter:grayscale(.5)}
+.carow .swatch{width:34px;height:34px}
+.carow .ci{flex:1;min-width:0}
+.carow .ci b{font-size:14px}
+.carow .ci .desc{font-size:11px;color:var(--ink-mute);margin:1px 0 3px;line-height:1.35}
+.carow .ci .meta{font-size:11px}
+.carow .ci .meta .cost{color:var(--gold)} .carow .ci .meta .inc{color:var(--cyan)} .carow .ci .meta .s{color:var(--ink-mute)}
+.buy{
+  padding:8px 13px;border-radius:10px;font-size:13px;font-weight:800;flex:none;
+  background:linear-gradient(135deg,var(--green),#27c97a);color:#06280f;
+}
+.buy:disabled{background:rgba(255,255,255,.08);color:var(--ink-mute);cursor:not-allowed}
+.buy.gold{background:linear-gradient(135deg,var(--gold),var(--gold-deep));color:#3a2606}
+.locktag{font-size:10px;color:var(--ink-mute);padding:3px 8px;background:rgba(255,255,255,.05);border-radius:8px;flex:none}
+.achrow{display:flex;align-items:center;gap:11px;padding:10px;border-radius:11px;margin-bottom:7px;background:rgba(255,255,255,.03);border:1px solid var(--card-bd)}
+.achrow.done{background:rgba(255,216,107,.08);border-color:rgba(255,216,107,.35)}
+.ach-ico{width:34px;height:34px;border-radius:9px;flex:none;display:grid;place-items:center;font-size:17px;font-weight:800;
+  background:rgba(255,255,255,.05);color:var(--ink-mute)}
+.achrow.done .ach-ico{background:linear-gradient(135deg,var(--gold),var(--gold-deep));color:#3a2606}
+.achrow .ai{flex:1} .achrow .ai b{font-size:13px} .achrow .ai small{display:block;color:var(--ink-mute);font-size:11px;margin-top:1px}
+.achrow .ar{font-size:11px;color:var(--gold);flex:none}
+.help p{font-size:13px;line-height:1.7;color:var(--ink-dim);margin-bottom:8px}
+.help p b{color:var(--ink)} .help p .k{color:var(--cyan)} .help p .g{color:var(--gold)}
+.btnrow{display:flex;gap:8px;margin-top:8px}
+.btnrow .buy{flex:1;text-align:center}
+
+@media(max-width:760px){
+  main{grid-template-columns:1fr;grid-template-rows:1fr auto}
+  aside{flex-direction:row;overflow-x:auto;max-height:200px}
+  aside .card{min-width:230px;flex:none}
+  .brand small{display:none} .stat{min-width:74px;padding:4px 9px} .stat .v{font-size:15px}
+}
 </style>
 </head>
 <body>
-<h1>🅿️ 抢车位</h1>
-<div class="coin">💰 <span id="coin">0</span></div>
-<div class="rate">停车收益 <span id="rate">0</span>/秒</div>
-<div class="shop" id="shop"></div>
-<div class="slots" id="slots"></div>
-<button class="expand" id="expandBtn">➕ 扩建车位 (<span id="expandCost">200</span>)</button>
-<div id="msg"></div>
-<div class="hint">商店选车 → 点空车位买下停入 → 自动赚停车费 → 攒钱买豪车/扩建。关页面也算钱，存档本地。</div>
+<div id="app">
+  <header>
+    <div class="brand">
+      <div class="logo">P</div>
+      <div><b>抢车位</b><small>NEON PARKING</small></div>
+    </div>
+    <div class="stats">
+      <div class="stat"><div class="k">现金</div><div class="v gold" id="moneyStat">0</div></div>
+      <div class="stat"><div class="k">每秒</div><div class="v cyan" id="incomeStat">0</div></div>
+      <div class="stat"><div class="k">等级</div><div class="v grn" id="levelStat">1</div></div>
+    </div>
+    <div class="actions">
+      <button class="act" id="btnHelp">玩法</button>
+      <button class="act" id="btnAch">成就</button>
+      <button class="act danger" id="btnReset">重置</button>
+    </div>
+    <div class="xpwrap" style="flex-basis:100%"><div id="xpFill"></div><span id="xpText">Lv1</span></div>
+  </header>
+
+  <main>
+    <section class="lot">
+      <canvas id="lot"></canvas>
+      <div class="lot-tag" id="lotTag">夜场停车场</div>
+      <div class="lot-hint">点击车位停车 / 管理</div>
+    </section>
+    <aside>
+      <div class="card">
+        <h3>车位扩建</h3>
+        <div class="kv"><span>当前车位</span><b id="spotCountStat">3 / 15</b></div>
+        <div class="kv"><span>已停车</span><b id="filledStat">0</b></div>
+        <button class="bigbtn" id="btnExpand">扩建车位</button>
+        <p class="sub" id="expandSub">夜场生意火爆，多一个车位多一份睡后收入。</p>
+      </div>
+      <div class="card">
+        <h3>经营数据</h3>
+        <div class="kv"><span>每秒进账</span><b class="g" id="kpiInc">0</b></div>
+        <div class="kv"><span>累计赚取</span><b class="c" id="kpiLife">0</b></div>
+        <div class="kv"><span>车队规模</span><b id="kpiFleet">0</b></div>
+        <div class="kv"><span>最高车型</span><b id="kpiBest">—</b></div>
+      </div>
+      <div class="card">
+        <h3>当前加成</h3>
+        <div id="buffWrap"></div>
+      </div>
+      <div class="card">
+        <h3>动态日志</h3>
+        <ul id="logList"></ul>
+      </div>
+    </aside>
+  </main>
+</div>
+
+<div id="toastWrap"></div>
+<div id="overlay">
+  <div id="modalCard">
+    <div class="modalHead">
+      <h2 id="modalTitle">车位</h2>
+      <button class="xbtn" id="modalClose">×</button>
+    </div>
+    <div class="modalBody" id="modalBody"></div>
+  </div>
+</div>
 
 <script>
-const CARS = [
-  { key:'bicycle', emoji:'🚲', name:'自行车', cost:30,    income:1 },
-  { key:'moto',    emoji:'🏍️', name:'摩托车', cost:150,   income:6 },
-  { key:'car',     emoji:'🚗', name:'小轿车', cost:900,   income:32 },
-  { key:'sports',  emoji:'🏎️', name:'跑车',   cost:5000,  income:160 },
-  { key:'luxury',  emoji:'🚙', name:'豪车',   cost:28000, income:850 }
+(function(){
+'use strict';
+/* ============================================================
+   抢车位 · 霓虹夜场 —— 单文件 idle 经营
+   约定：动态内容一律 textContent / DOM / canvas，不用 innerHTML 拼串
+   ============================================================ */
+
+/* ---------- 1. 配置：车型 / 车位 / 等级 / 事件 / 成就 ---------- */
+// dw/dh = 绘制尺寸相对 min(车位格) 的比例；shape 控制造型分支
+var CARS = [
+  {key:'bike',  name:'共享单车',  cost:50,      inc:0.5,  lv:1,  dw:.22, dh:.40, shape:'bike',  color:'#3ad17a', desc:'城里最便宜的代步，停着也能收点小钱'},
+  {key:'scoot', name:'电动小摩托', cost:300,     inc:2,    lv:1,  dw:.26, dh:.46, shape:'scoot', color:'#e7ecf7', desc:'外卖小哥同款，回本那叫一个快'},
+  {key:'sedan', name:'家用轿车',  cost:1500,    inc:8,    lv:2,  dw:.32, dh:.54, shape:'car',   color:'#5aa0ff', desc:'正经第一辆车，停哪个位都不掉价'},
+  {key:'suv',   name:'城市SUV',   cost:7000,    inc:32,   lv:3,  dw:.37, dh:.55, shape:'suv',   color:'#c9a06a', desc:'块头大气派足，停车费也跟着气派'},
+  {key:'sport', name:'敞篷跑车',  cost:35000,   inc:140,  lv:5,  dw:.33, dh:.56, shape:'sport', color:'#ff4b6e', desc:'引擎一响黄金万两，夜场门面担当'},
+  {key:'lux',   name:'豪华轿车',  cost:180000,  inc:650,  lv:7,  dw:.35, dh:.58, shape:'lux',   color:'#23283c', desc:'老板座驾，自带 VIP 气场'},
+  {key:'limo',  name:'加长林肯',  cost:1000000, inc:3200, lv:9,  dw:.36, dh:.74, shape:'limo',  color:'#272c40', desc:'一位半的排面，婚礼旺季日进斗金'},
+  {key:'heli',  name:'私人直升机', cost:12000000,inc:36000,lv:12, dw:.52, dh:.60, shape:'heli',  color:'#d8b34a', desc:'天字号车位，停机坪就这一块'}
 ];
-const CARM = {};
-CARS.forEach(function (c) { CARM[c.key] = c; });
-const KEY = 'park_v1';
-let state = JSON.parse(localStorage.getItem(KEY) || 'null') || { coin:50, slots:[null,null,null], expandPrice:200 };
-if (!state.slots || state.slots.length < 1) state.slots = [null,null,null];
-if (!state.expandPrice) state.expandPrice = 200;
-let selected = null;
+var CARMAP = {}; CARS.forEach(function(c,i){c.idx=i;CARMAP[c.key]=i;});
 
-function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
-function fmt(n) { n = Math.floor(n); if (n < 1e4) return '' + n; if (n < 1e8) return (n/1e4).toFixed(n<1e5?1:0) + '万'; if (n < 1e12) return (n/1e8).toFixed(2) + '亿'; return (n/1e12).toFixed(2) + '兆'; }
-function rate() { return state.slots.reduce(function (s, c) { return s + (c ? CARM[c].income : 0); }, 0); }
-function msg(t) { document.getElementById('msg').textContent = t; }
+// 车位档位：0 普通 / 1 黄金 / 2 白金
+var TIERS = [
+  {key:'normal',  name:'普通车位', mult:1.0, line:'#cfd6e6', glow:null},
+  {key:'gold',    name:'黄金车位', mult:1.6, line:'#ffd86b', glow:'rgba(255,184,40,.55)', upCost:8000,  lv:4},
+  {key:'platinum',name:'白金车位', mult:2.5, line:'#9fe9ff', glow:'rgba(70,200,255,.6)',  upCost:90000, lv:6}
+];
 
-function settleOffline() {
-  const now = Date.now();
-  const dt = (now - (state.t || now)) / 1000;
-  if (dt > 5) state.coin += dt * rate();
-  state.t = now;
+// 等级阈值（累计赚取达到即升级，unlock 为升级时的提示文案）
+var LEVELS = [
+  {at:0},            {at:500,unlock:'家用轿车'},
+  {at:3000,unlock:'城市SUV'}, {at:12000,unlock:'黄金车位升级'},
+  {at:50000,unlock:'敞篷跑车'}, {at:200000,unlock:'白金车位升级'},
+  {at:800000,unlock:'豪华轿车'}, {at:3000000},
+  {at:10000000,unlock:'加长林肯'}, {at:40000000},
+  {at:150000000},   {at:600000000,unlock:'私人直升机'},
+  {at:2500000000},  {at:10000000000}, {at:50000000000}
+];
+
+// 随机事件（weight 权重，run 触发时执行）
+var EVENTS = [
+  {key:'ticket', w:16, tone:'bad',  name:'交警贴条',   desc:'交警趁夜来贴条，罚款一笔'},
+  {key:'vip',    w:22, tone:'good', name:'VIP 小费',   desc:'贵客随手赏了张红票子'},
+  {key:'scratch',w:14, tone:'gold', name:'刮刮乐中奖', desc:'路口买的刮刮乐居然中了'},
+  {key:'boom',   w:17, tone:'good', name:'夜市爆满',   desc:'今晚人流爆棚，全场收入翻倍 30 秒'},
+  {key:'ride',   w:16, tone:'good', name:'顺风车派单', desc:'某辆车接到大单，单车 3 倍 25 秒'},
+  {key:'block',  w:12, tone:'bad',  name:'车位被占',   desc:'有车乱停占了一位，该位 20 秒无收益'},
+  {key:'fest',   w:3,  tone:'gold', name:'年终大促',   desc:'整场狂欢！全场 2.5 倍 40 秒'}
+];
+
+// 成就（check 返回 boolean，reward 一次性现金奖励）
+var ACH = [
+  {key:'first',   name:'第一桶金',  desc:'累计赚取 1,000',          reward:500,     ico:'一'},
+  {key:'fleet5',  name:'车队初成',  desc:'同时拥有 5 辆车',         reward:3000,    ico:'五'},
+  {key:'gold',    name:'黄金地段',  desc:'升级第一个黄金车位',       reward:20000,   ico:'金'},
+  {key:'sport',   name:'跑车梦圆',  desc:'拥有一辆敞篷跑车',         reward:80000,   ico:'跑'},
+  {key:'platinum',name:'白金会员',  desc:'升级第一个白金车位',       reward:200000,  ico:'铂'},
+  {key:'million', name:'百万富翁',  desc:'持有现金达到 100 万',      reward:500000,  ico:'万'},
+  {key:'limo',    name:'加长来啦',  desc:'拥有一辆加长林肯',         reward:3000000, ico:'长'},
+  {key:'full',    name:'满座',     desc:'所有车位停满',             reward:0,        ico:'满'},
+  {key:'heli',    name:'起飞',     desc:'拥有一架私人直升机',        reward:80000000,ico:'飞'},
+  {key:'tycoon',  name:'车场大亨',  desc:'达到 15 级',              reward:500000000,ico:'王'}
+];
+
+var MAX_SPOTS = 15, START_SPOTS = 3;
+var SAVE_KEY = 'parking_neon_v1';
+var OFFLINE_RATE = 0.4, OFFLINE_CAP = 8*3600; // 离线按 40% 结算，上限 8 小时
+var EVT_MIN = 24, EVT_MAX = 46; // 随机事件间隔秒
+
+/* ---------- 2. 存档 ---------- */
+function freshState(){
+  var sp=[]; for(var i=0;i<START_SPOTS;i++) sp.push({tier:0,car:null,anim:1,buff:1,buffExp:0});
+  return {
+    money:150, lifetime:0, spots:sp, ach:{},
+    nextEvt:EVT_MIN+Math.random()*10, t0:Date.now(), last:Date.now(),
+    bestCar:-1, expandCost:expandCostAt(START_SPOTS), play:0
+  };
+}
+function expandCostAt(count){
+  // 第 count+1 个车位的价格（count 为当前数量）
+  if(count>=MAX_SPOTS) return Infinity;
+  return Math.round(1500*Math.pow(2.6, count-START_SPOTS));
+}
+function load(){
+  try{
+    var raw=localStorage.getItem(SAVE_KEY);
+    if(!raw) return freshState();
+    var s=JSON.parse(raw);
+    var base=freshState();
+    s=Object.assign(base,s);
+    if(!Array.isArray(s.spots)||s.spots.length<START_SPOTS) s.spots=base.spots;
+    s.spots.forEach(function(p){ if(p.anim==null) p.anim=1; if(p.buff==null){p.buff=1;p.buffExp=0;} });
+    if(!s.ach) s.ach={};
+    s.last=Date.now();
+    return s;
+  }catch(e){ return freshState(); }
+}
+function save(){
+  state.last=Date.now();
+  try{ localStorage.setItem(SAVE_KEY, JSON.stringify(state)); }catch(e){}
+}
+var state = load();
+
+/* ---------- 3. 离线结算 ---------- */
+function offlineCalc(){
+  var saved = arguments[0] || 0;
+  var dt = Math.min(OFFLINE_CAP, Math.max(0,(Date.now()-saved)/1000));
+  if(dt < 30) return 0; // 30 秒内不算
+  var inc = totalIncome(true);
+  var earn = inc * dt * OFFLINE_RATE;
+  state.money += earn; state.lifetime += earn;
+  return earn;
 }
 
-function renderShop() {
-  const el = document.getElementById('shop');
-  el.innerHTML = '';
-  CARS.forEach(function (c) {
-    const b = document.createElement('button');
-    if (selected === c.key) b.classList.add('sel');
-    if (state.coin < c.cost) b.disabled = true;
-    const line1 = document.createElement('b');
-    line1.textContent = c.emoji + ' ' + c.name;
-    const line2 = document.createElement('div');
-    line2.style.fontSize = '.7rem';
-    line2.style.opacity = '.85';
-    line2.textContent = c.cost + '💰  +' + c.income + '/秒';
-    b.appendChild(line1);
-    b.appendChild(line2);
-    b.onclick = function () { selected = (selected === c.key ? null : c.key); render(); msg(selected ? '选中 ' + c.emoji + c.name + '，点空车位停入' : ''); };
-    el.appendChild(b);
-  });
+/* ---------- 4. 工具 ---------- */
+function fmt(n){
+  n=Math.floor(n);
+  if(n>=1e12) return (n/1e12).toFixed(2)+'万亿';
+  if(n>=1e8)  return (n/1e8).toFixed(2)+'亿';
+  if(n>=1e4)  return (n/1e4).toFixed(2)+'万';
+  return ''+n;
+}
+function fmtR(n){
+  if(n>=1e4) return fmt(n);
+  if(n>=100) return Math.floor(n).toString();
+  return n.toFixed(n<10?2:1);
+}
+function clamp(v,a,b){return v<a?a:v>b?b:v;}
+function shade(hex,p){
+  var c=hex.replace('#',''); if(c.length===3) c=c.replace(/(.)/g,'$1$1');
+  var r=parseInt(c.slice(0,2),16),g=parseInt(c.slice(2,4),16),b=parseInt(c.slice(4,6),16);
+  var t=p<0?0:255, a=Math.min(1,Math.abs(p)/100);
+  r=Math.round(r+(t-r)*a); g=Math.round(g+(t-g)*a); b=Math.round(b+(t-b)*a);
+  return 'rgb('+r+','+g+','+b+')';
+}
+function easeOut(t){return 1-Math.pow(1-t,3);}
+
+// 全局 buff（夜市爆满 / 年终大促）：存 [{mult,exp,name,tone}]
+var gBuff=[];
+
+function globalMult(){
+  var m=1; for(var i=0;i<gBuff.length;i++) m*=gBuff[i].mult; return m;
+}
+function cleanBuffs(now){
+  var changed=false;
+  gBuff = gBuff.filter(function(b){ if(b.exp<=now){changed=true;return false;} return true; });
+  for(var i=0;i<state.spots.length;i++){
+    var p=state.spots[i]; if(p.buffExp && p.buffExp<=now){p.buff=1;p.buffExp=0;changed=true;}
+  }
+  return changed;
+}
+function totalIncome(baseOnly){
+  // baseOnly: 离线结算时忽略短时 buff
+  var sum=0;
+  for(var i=0;i<state.spots.length;i++){
+    var p=state.spots[i]; if(p.car==null) continue;
+    var inc=CARS[p.car].inc*TIERS[p.tier].mult;
+    if(!baseOnly) inc*=p.buff*globalMult();
+    sum+=inc;
+  }
+  return sum;
 }
 
-function render() {
-  document.getElementById('coin').textContent = fmt(state.coin);
-  document.getElementById('rate').textContent = fmt(rate());
-  document.getElementById('expandCost').textContent = fmt(state.expandPrice);
-  document.getElementById('expandBtn').disabled = state.coin < state.expandPrice;
-  renderShop();
-  const el = document.getElementById('slots');
-  el.innerHTML = '';
-  state.slots.forEach(function (car, i) {
-    const d = document.createElement('div');
-    d.className = 'slot' + (car ? ' filled' : '');
-    if (!car) {
-      const ic = document.createElement('div');
-      ic.className = 'car'; ic.style.opacity = '.3'; ic.textContent = '🅿️';
-      const lbl = document.createElement('div');
-      lbl.className = 'lbl'; lbl.textContent = '空车位';
-      d.appendChild(ic); d.appendChild(lbl);
-      d.onclick = function () { park(i); };
-    } else {
-      const c = CARM[car];
-      const ic = document.createElement('div');
-      ic.className = 'car'; ic.textContent = c.emoji;
-      const lbl = document.createElement('div');
-      lbl.className = 'lbl'; lbl.textContent = c.name + ' +' + c.income + '/秒';
-      d.appendChild(ic); d.appendChild(lbl);
+/* ---------- 5. 音频（Web Audio 合成）---------- */
+// 浏览器禁止自动播放，必须等用户首次交互后才创建 AudioContext，否则控制台一堆警告
+var actx=null, audioReady=false;
+function unlockAudio(){ audioReady=true; ensureAudio(); }
+window.addEventListener('pointerdown',unlockAudio);
+window.addEventListener('keydown',unlockAudio);
+function ensureAudio(){
+  if(!audioReady) return; // 没交互过就不创建，避免 autoplay 警告
+  if(!actx){
+    try{ actx=new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ actx=null; }
+  }
+  if(actx && actx.state==='suspended') actx.resume();
+}
+function tone(freq,dur,type,vol,delay,toFreq){
+  if(!actx) return;
+  var t0=actx.currentTime+(delay||0);
+  var o=actx.createOscillator(), g=actx.createGain();
+  o.type=type||'sine'; o.frequency.setValueAtTime(freq,t0);
+  if(toFreq) o.frequency.exponentialRampToValueAtTime(Math.max(1,toFreq),t0+dur);
+  g.gain.setValueAtTime(0.0001,t0);
+  g.gain.exponentialRampToValueAtTime(vol||0.08,t0+0.012);
+  g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  o.connect(g); g.connect(actx.destination);
+  o.start(t0); o.stop(t0+dur+0.02);
+}
+function sfx(kind){
+  ensureAudio(); if(!actx) return;
+  switch(kind){
+    case 'click':  tone(440,.06,'square',.04); break;
+    case 'buy':    tone(520,.08,'triangle',.09); tone(780,.12,'triangle',.09,.06,900); break;
+    case 'coin':   tone(880,.07,'triangle',.08); tone(1320,.12,'triangle',.07,.06); break;
+    case 'sell':   tone(520,.08,'sine',.07); tone(360,.12,'sine',.06,.06,260); break;
+    case 'expand': tone(300,.28,'sawtooth',.08,0,900); break;
+    case 'upgrade':tone(523,.1,'triangle',.08); tone(659,.1,'triangle',.08,.08); tone(784,.18,'triangle',.08,.16); break;
+    case 'level':  [523,659,784,1046].forEach(function(f,i){tone(f,.16,'triangle',.09,i*.09);}); break;
+    case 'good':   [660,880,1175].forEach(function(f,i){tone(f,.12,'sine',.07,i*.07);}); break;
+    case 'bad':    tone(220,.22,'sawtooth',.09,0,90); break;
+    case 'gold':   [784,988,1318].forEach(function(f,i){tone(f,.14,'triangle',.09,i*.08);}); break;
+  }
+}
+
+/* ---------- 6. Canvas 渲染 ---------- */
+var cv=document.getElementById('lot'), ctx=cv.getContext('2d');
+var dpr=Math.max(1,window.devicePixelRatio||1);
+var W=600,H=480, layout=[];
+function resize(){
+  var r=cv.parentElement.getBoundingClientRect();
+  W=Math.max(280,r.width); H=Math.max(260,r.height);
+  dpr=Math.max(1,window.devicePixelRatio||1);
+  cv.width=Math.round(W*dpr); cv.height=Math.round(H*dpr);
+  cv.style.width=W+'px'; cv.style.height=H+'px';
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  computeLayout();
+}
+window.addEventListener('resize',resize);
+
+// 根据车位数量 + 画布尺寸计算每个车位的格子坐标（居中网格）
+function computeLayout(){
+  layout=[];
+  var n=state.spots.length;
+  // 估算每行几个：宽够放几个 76px 格
+  var cellW=78, cellH=104, gapX=14, gapY=22;
+  var perRow=Math.min(n, Math.max(1, Math.floor((W-40+gapX)/(cellW+gapX)) ));
+  var rows=Math.ceil(n/perRow);
+  var totalW=perRow*cellW+(perRow-1)*gapX;
+  var totalH=rows*cellH+(rows-1)*gapY;
+  var ox=(W-totalW)/2, oy=Math.max(36,(H-totalH)/2);
+  for(var i=0;i<n;i++){
+    var r=Math.floor(i/perRow), c=i%perRow;
+    layout.push({x:ox+c*(cellW+gapX), y:oy+r*(cellH+gapY), w:cellW, h:cellH,
+                 cx:ox+c*(cellW+gapX)+cellW/2, cy:oy+r*(cellH+gapY)+cellH/2});
+  }
+}
+function rr(x,y,w,h,r){
+  r=Math.min(r,w/2,h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r);
+  ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath();
+}
+
+// 浮动金币文字
+var floaters=[];
+function spawnFloater(cell,text,color){
+  if(floaters.length>40) return;
+  floaters.push({x:cell.cx+(Math.random()*16-8), y:cell.cy-6, vy:-0.35, life:1, text:text, color:color||'#ffd86b'});
+}
+
+var stars=[]; for(var i=0;i<46;i++) stars.push({x:Math.random(),y:Math.random()*.5,r:Math.random()*1.2+.3,p:Math.random()*6.28});
+
+function drawLot(t){
+  // 沥青底
+  var g=ctx.createLinearGradient(0,0,0,H);
+  g.addColorStop(0,'#10132a'); g.addColorStop(1,'#080a18');
+  ctx.fillStyle=g; ctx.fillRect(0,0,W,H);
+  // 远处星点 / 灯
+  for(var i=0;i<stars.length;i++){
+    var s=stars[i]; var tw=0.4+0.6*Math.abs(Math.sin(t*0.0015+s.p));
+    ctx.fillStyle='rgba(180,200,255,'+(0.25*tw)+')';
+    ctx.fillRect(s.x*W, s.y*H*0.7, s.r, s.r);
+  }
+  // 路灯光池（顶部两盏）
+  for(var lx=0;lx<2;lx++){
+    var cxp=(lx===0?W*0.2:W*0.8), cyp=H*0.06;
+    var rg=ctx.createRadialGradient(cxp,cyp,4,cxp,cyp,Math.max(80,W*0.32));
+    rg.addColorStop(0,'rgba(255,200,110,0.28)');
+    rg.addColorStop(1,'rgba(255,200,110,0)');
+    ctx.fillStyle=rg; ctx.fillRect(0,0,W,H);
+    // 灯杆头
+    ctx.fillStyle='#2b2f4a'; ctx.beginPath(); ctx.arc(cxp,cyp,5,0,6.28); ctx.fill();
+    ctx.fillStyle='#ffce7a'; ctx.beginPath(); ctx.arc(cxp,cyp,2.5,0,6.28); ctx.fill();
+  }
+  // 霓虹招牌
+  drawSign(t);
+}
+function drawSign(t){
+  var pulse=0.5+0.5*Math.sin(t*0.003);
+  ctx.save();
+  ctx.translate(W/2, 22);
+  ctx.font='800 16px "PingFang SC",sans-serif';
+  ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.shadowBlur=14+pulse*8; ctx.shadowColor='rgba(255,91,212,.9)';
+  ctx.fillStyle='#ff5bd4'; ctx.fillText('PARKING', -36, 0);
+  ctx.shadowColor='rgba(91,231,255,.9)'; ctx.fillStyle='#5be7ff';
+  ctx.fillText('抢车位', 38, 0);
+  ctx.shadowBlur=0; ctx.restore();
+}
+
+function drawSpot(i,t){
+  var p=state.spots[i], cell=layout[i]; if(!cell) return;
+  var tier=TIERS[p.tier];
+  // 地面块
+  ctx.fillStyle='rgba(255,255,255,.018)';
+  rr(cell.x,cell.y,cell.w,cell.h,8); ctx.fill();
+  // 档位光晕
+  if(tier.glow){
+    var rg=ctx.createRadialGradient(cell.cx,cell.cy,2,cell.cx,cell.cy,cell.w*0.9);
+    rg.addColorStop(0,tier.glow); rg.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.globalAlpha=0.5+0.2*Math.sin(t*0.003+i); ctx.fillStyle=rg;
+    ctx.fillRect(cell.x-20,cell.y-20,cell.w+40,cell.h+40); ctx.globalAlpha=1;
+  }
+  // 车位线（U 形：左右 + 底）
+  ctx.strokeStyle=tier.line; ctx.lineWidth=2.4; ctx.setLineDash(p.tier>0?[]:[7,5]);
+  ctx.beginPath();
+  ctx.moveTo(cell.x+5,cell.y+6); ctx.lineTo(cell.x+5,cell.y+cell.h-5);
+  ctx.lineTo(cell.x+cell.w-5,cell.y+cell.h-5); ctx.lineTo(cell.x+cell.w-5,cell.y+6);
+  ctx.stroke(); ctx.setLineDash([]);
+  // 编号
+  ctx.font='700 11px sans-serif'; ctx.textAlign='left'; ctx.textBaseline='top';
+  ctx.fillStyle=p.tier>0?tier.line:'rgba(180,195,230,.5)';
+  ctx.fillText('P'+(i+1), cell.x+8, cell.y+8);
+  if(p.tier>0){ ctx.font='700 9px sans-serif'; ctx.fillText(tier.name.slice(0,2), cell.x+8, cell.y+22); }
+  // 占位中（被乱停）
+  if(p.buff===0 && p.car!=null){
+    ctx.fillStyle='rgba(255,91,110,.15)'; rr(cell.x,cell.y,cell.w,cell.h,8); ctx.fill();
+  }
+  // 车
+  if(p.car!=null){ drawVehicle(p,cell,t); }
+  else {
+    // 空位提示 + 入场虚框
+    ctx.strokeStyle='rgba(120,140,220,.35)'; ctx.lineWidth=1.4; ctx.setLineDash([3,5]);
+    rr(cell.x+16,cell.y+22,cell.w-32,cell.h-38,8); ctx.stroke(); ctx.setLineDash([]);
+    ctx.font='600 11px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle='rgba(150,165,210,.6)';
+    ctx.fillText('空位', cell.cx, cell.cy);
+  }
+}
+
+function drawVehicle(p,cell,t){
+  var car=CARS[p.car];
+  var a=easeOut(clamp(p.anim,0,1));
+  var yoff=(1-a)*-44, alpha=a;
+  var unit=Math.min(cell.w,cell.h);
+  var Wd=unit*car.dw, Ld=unit*car.dh;
+  ctx.save();
+  ctx.translate(cell.cx, cell.cy+yoff);
+  ctx.globalAlpha=alpha;
+  // 车底投影
+  ctx.fillStyle='rgba(0,0,0,.4)';
+  ctx.beginPath(); ctx.ellipse(0, Ld*0.34, Wd*0.5, Ld*0.12, 0,0,6.28); ctx.fill();
+  var shape=car.shape;
+  if(shape==='bike') drawBike(Wd,Ld,car);
+  else if(shape==='scoot') drawScoot(Wd,Ld,car);
+  else if(shape==='heli') drawHeli(Wd,Ld,car,t);
+  else drawAuto(Wd,Ld,car,shape);
+  ctx.globalAlpha=1; ctx.restore();
+}
+function drawBike(Wd,Ld,car){
+  ctx.fillStyle='#16181f';
+  ctx.beginPath(); ctx.ellipse(0,-Ld*0.32,Wd*0.2,Ld*0.1,0,0,6.28); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0, Ld*0.32,Wd*0.2,Ld*0.1,0,0,6.28); ctx.fill();
+  ctx.strokeStyle=car.color; ctx.lineWidth=Math.max(2.4,Wd*0.16); ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(0,-Ld*0.28); ctx.lineTo(0,Ld*0.30); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-Wd*0.45,-Ld*0.34); ctx.lineTo(Wd*0.45,-Ld*0.30); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-Wd*0.28,Ld*0.34); ctx.lineTo(Wd*0.28,Ld*0.34); ctx.stroke();
+  // 大灯
+  ctx.fillStyle='#fff6cf'; ctx.beginPath(); ctx.arc(0,-Ld*0.40,Wd*0.07,0,6.28); ctx.fill();
+}
+function drawScoot(Wd,Ld,car){
+  // 踏板
+  ctx.fillStyle='#1b1d27'; rr(-Wd*0.24,-Ld*0.08,Wd*0.48,Ld*0.66,Wd*0.14); ctx.fill();
+  // 前灯/把
+  ctx.fillStyle=car.color; rr(-Wd*0.42,-Ld*0.46,Wd*0.5,Ld*0.22,Wd*0.10); ctx.fill();
+  ctx.fillStyle='#222'; ctx.fillRect(-Wd*0.30,-Ld*0.50,Wd*0.10,Ld*0.18);
+  ctx.fillStyle='#fff0b0'; ctx.beginPath(); ctx.arc(-Wd*0.16,-Ld*0.40,Wd*0.06,0,6.28); ctx.fill();
+  // 座椅
+  ctx.fillStyle='#111'; rr(-Wd*0.26,Ld*0.16,Wd*0.52,Ld*0.20,Wd*0.08); ctx.fill();
+  // 轮
+  ctx.fillStyle='#101216'; rr(-Wd*0.34,-Ld*0.50,Wd*0.10,Ld*0.20,3); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(0,Ld*0.40,Wd*0.16,Ld*0.09,0,0,6.28); ctx.fill();
+}
+function drawAuto(Wd,Ld,car,shape){
+  var rad=Wd*0.26; if(shape==='suv') rad=Wd*0.18;
+  // 车身渐变
+  var grad=ctx.createLinearGradient(-Wd*0.5,0,Wd*0.5,0);
+  grad.addColorStop(0,shade(car.color,-32)); grad.addColorStop(.5,car.color); grad.addColorStop(1,shade(car.color,-40));
+  ctx.fillStyle=grad; rr(-Wd*0.48,-Ld*0.46,Wd*0.96,Ld*0.92,rad); ctx.fill();
+  // 跑车鼻锥
+  if(shape==='sport'){
+    ctx.fillStyle=shade(car.color,-18);
+    ctx.beginPath(); ctx.moveTo(-Wd*0.18,-Ld*0.46); ctx.lineTo(Wd*0.18,-Ld*0.46);
+    ctx.lineTo(Wd*0.10,-Ld*0.50); ctx.lineTo(-Wd*0.10,-Ld*0.50); ctx.closePath(); ctx.fill();
+  }
+  // 前挡风
+  ctx.fillStyle='rgba(150,200,255,.55)';
+  ctx.beginPath();
+  ctx.moveTo(-Wd*0.30,-Ld*0.06); ctx.lineTo(Wd*0.30,-Ld*0.06);
+  ctx.lineTo(Wd*0.22,-Ld*0.26); ctx.lineTo(-Wd*0.22,-Ld*0.26); ctx.closePath(); ctx.fill();
+  // 后挡风
+  ctx.beginPath();
+  ctx.moveTo(-Wd*0.28,Ld*0.12); ctx.lineTo(Wd*0.28,Ld*0.12);
+  ctx.lineTo(Wd*0.20,Ld*0.30); ctx.lineTo(-Wd*0.20,Ld*0.30); ctx.closePath(); ctx.fill();
+  // 加长 / 豪华：多一排侧窗
+  if(shape==='limo' || shape==='lux'){
+    ctx.fillStyle='rgba(150,200,255,.32)';
+    ctx.beginPath();
+    ctx.moveTo(-Wd*0.24,-Ld*0.02); ctx.lineTo(Wd*0.24,-Ld*0.02);
+    ctx.lineTo(Wd*0.24,Ld*0.08); ctx.lineTo(-Wd*0.24,Ld*0.08); ctx.closePath(); ctx.fill();
+  }
+  if(shape==='limo'){
+    ctx.fillStyle='rgba(255,216,107,.5)';
+    for(var k=-1;k<=1;k++){ ctx.fillRect(-Wd*0.03,k*Ld*0.14-1,Wd*0.06,2); }
+  }
+  if(shape==='lux'){ // 豪华镀铬条
+    ctx.fillStyle='rgba(220,230,245,.6)'; ctx.fillRect(-Wd*0.40,Ld*0.0,Wd*0.80,1.2);
+  }
+  // 大灯
+  ctx.shadowColor='rgba(255,240,170,.9)'; ctx.shadowBlur=7;
+  ctx.fillStyle='#fff7cf';
+  ctx.beginPath(); ctx.arc(-Wd*0.30,-Ld*0.40,Wd*0.07,0,6.28); ctx.fill();
+  ctx.beginPath(); ctx.arc( Wd*0.30,-Ld*0.40,Wd*0.07,0,6.28); ctx.fill();
+  ctx.shadowBlur=0;
+  // 尾灯
+  ctx.fillStyle='#ff4b5b';
+  ctx.fillRect(-Wd*0.42,Ld*0.38,Wd*0.16,Math.max(2,Wd*0.07));
+  ctx.fillRect( Wd*0.26,Ld*0.38,Wd*0.16,Math.max(2,Wd*0.07));
+}
+function drawHeli(Wd,Ld,car,t){
+  // 滑橇
+  ctx.strokeStyle='#9aa3c7'; ctx.lineWidth=2;
+  ctx.beginPath(); ctx.moveTo(-Wd*0.46,-Ld*0.05); ctx.lineTo(-Wd*0.46,Ld*0.22); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo( Wd*0.46,-Ld*0.05); ctx.lineTo( Wd*0.46,Ld*0.22); ctx.stroke();
+  // 机身
+  var grad=ctx.createLinearGradient(-Wd*0.5,0,Wd*0.5,0);
+  grad.addColorStop(0,shade(car.color,-25)); grad.addColorStop(.5,car.color); grad.addColorStop(1,shade(car.color,-30));
+  ctx.fillStyle=grad; ctx.beginPath(); ctx.ellipse(0,-Ld*0.05,Wd*0.34,Ld*0.30,0,0,6.28); ctx.fill();
+  // 座舱玻璃
+  ctx.fillStyle='rgba(150,210,255,.62)'; ctx.beginPath(); ctx.ellipse(0,-Ld*0.20,Wd*0.22,Ld*0.14,0,0,6.28); ctx.fill();
+  // 尾梁
+  ctx.fillStyle=shade(car.color,-22); ctx.fillRect(-Wd*0.06,Ld*0.08,Wd*0.12,Ld*0.40);
+  // 尾桨
+  ctx.fillStyle='#333'; ctx.beginPath(); ctx.arc(0,Ld*0.46,Wd*0.09,0,6.28); ctx.fill();
+  // 主旋翼（旋转）
+  var rot=t*0.02;
+  ctx.fillStyle='rgba(220,230,245,.12)'; ctx.beginPath(); ctx.arc(0,-Ld*0.06,Wd*0.52,0,6.28); ctx.fill();
+  ctx.save(); ctx.translate(0,-Ld*0.06); ctx.rotate(rot);
+  ctx.strokeStyle='rgba(230,238,250,.85)'; ctx.lineWidth=2.4; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(-Wd*0.56,0); ctx.lineTo(Wd*0.56,0); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(0,-Wd*0.10); ctx.lineTo(0,Wd*0.10); ctx.stroke();
+  ctx.restore();
+}
+
+function drawFloaters(){
+  for(var i=floaters.length-1;i>=0;i--){
+    var f=floaters[i];
+    ctx.globalAlpha=clamp(f.life,0,1);
+    ctx.font='800 13px sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillStyle=f.color; ctx.shadowColor='rgba(0,0,0,.6)'; ctx.shadowBlur=4;
+    ctx.fillText(f.text,f.x,f.y); ctx.shadowBlur=0; ctx.globalAlpha=1;
+  }
+}
+
+var lastFrame=performance.now(), floaterTimer=0;
+function render(now){
+  var dt=(now-lastFrame)/1000; lastFrame=now;
+  // 推进入场动画
+  for(var i=0;i<state.spots.length;i++){ var p=state.spots[i]; if(p.anim<1) p.anim=Math.min(1,p.anim+dt*2.2); }
+  // 浮动金币
+  floaterTimer+=dt;
+  if(floaterTimer>=1.6){
+    floaterTimer=0;
+    for(var j=0;j<state.spots.length;j++){
+      var sp=state.spots[j]; if(sp.car==null||sp.buff===0) continue;
+      var v=CARS[sp.car].inc*TIERS[sp.tier].mult*sp.buff*globalMult();
+      if(v>0 && Math.random()<0.7) spawnFloater(layout[j],'+'+fmtR(v), sp.tier>0?TIERS[sp.tier].line:'#ffd86b');
     }
-    el.appendChild(d);
+  }
+  for(var k=floaters.length-1;k>=0;k--){ floaters[k].y+=floaters[k].vy; floaters[k].life-=dt*0.6; if(floaters[k].life<=0) floaters.splice(k,1); }
+
+  drawLot(now);
+  for(var m=0;m<state.spots.length;m++) drawSpot(m,now);
+  drawFloaters();
+  requestAnimationFrame(render);
+}
+
+/* ---------- 7. 点击车位 ---------- */
+cv.addEventListener('click',function(e){
+  ensureAudio();
+  var r=cv.getBoundingClientRect(), mx=e.clientX-r.left, my=e.clientY-r.top;
+  for(var i=0;i<layout.length;i++){
+    var c=layout[i];
+    if(mx>=c.x&&mx<=c.x+c.w&&my>=c.y&&my<=c.y+c.h){ openSpot(i); return; }
+  }
+});
+
+/* ---------- 8. DOM 弹窗 / UI ---------- */
+var overlay=document.getElementById('overlay');
+var mTitle=document.getElementById('modalTitle'), mBody=document.getElementById('modalBody');
+document.getElementById('modalClose').onclick=closeModal;
+overlay.addEventListener('click',function(e){ if(e.target===overlay) closeModal(); });
+function closeModal(){ overlay.classList.remove('show'); mBody.replaceChildren(); }
+function openModal(title){ mTitle.replaceChildren(); mTitle.appendChild(document.createTextNode(title)); mBody.replaceChildren(); overlay.classList.add('show'); }
+
+function el(tag,cls,txt){
+  var n=document.createElement(tag); if(cls) n.className=cls; if(txt!=null) n.textContent=txt; return n;
+}
+
+// 构造可购车列表（返回节点数组），onBuy(carIdx) 决定购买行为
+function buildCarList(currentCarIdx, onBuy){
+  var lvl=curLevel();
+  var rows=[];
+  CARS.forEach(function(car){
+    var row=el('div','carow'+(car.lv>lvl?' lock':''));
+    var sw=el('div','swatch'); sw.style.background='linear-gradient(135deg,'+shade(car.color,-20)+','+car.color+')';
+    row.appendChild(sw);
+    var info=el('div','ci');
+    info.appendChild(el('b',null,car.name));
+    info.appendChild(el('div','desc',car.desc));
+    var meta=el('div','meta');
+    meta.appendChild(el('span','cost','¥'+fmt(car.cost)));
+    var sep=el('span','s',' · ');
+    var inc=el('span','inc','+'+fmtR(car.inc)+'/秒');
+    meta.appendChild(sep); meta.appendChild(inc);
+    if(car.idx>0){ meta.appendChild(el('span','s',' · 回本 '+Math.round(car.cost/car.inc)+'秒')); }
+    info.appendChild(meta);
+    row.appendChild(info);
+    var locked=car.lv>lvl;
+    var cant=locked||state.money<car.cost;
+    if(locked){
+      row.appendChild(el('span','locktag','Lv'+car.lv+' 解锁'));
+    }else{
+      var btn=el('button','buy'+(car.idx>=5?' gold':''), '停入');
+      btn.disabled = cant || (currentCarIdx!=null && currentCarIdx===car.idx);
+      if(currentCarIdx!=null && currentCarIdx===car.idx){ btn.textContent='已停此车'; }
+      btn.onclick=function(){ onBuy(car.idx); };
+      row.appendChild(btn);
+    }
+    rows.push(row);
+  });
+  return rows;
+}
+
+function openSpot(i){
+  ensureAudio(); sfx('click');
+  var p=state.spots[i]; var tier=TIERS[p.tier];
+  openModal('车位 P'+(i+1));
+  var tEl=el('span','tier',tier.name); mTitle.appendChild(tEl);
+
+  if(p.car!=null){
+    var car=CARS[p.car];
+    var inc=car.inc*tier.mult*p.buff*globalMult();
+    var now=el('div','spotnow');
+    var sw=el('div','swatch'); sw.style.background='linear-gradient(135deg,'+shade(car.color,-20)+','+car.color+')';
+    now.appendChild(sw);
+    var info=el('div','sn-info');
+    info.appendChild(el('b',null,car.name));
+    var base='基础 '+fmtR(car.inc)+'/秒 × '+tier.mult.toFixed(1)+'('+(tier.name.slice(0,2))+')';
+    if(p.buff!==1) base+=' × '+p.buff.toFixed(1);
+    if(globalMult()!==1) base+=' × '+globalMult().toFixed(1);
+    info.appendChild(el('small',null,base));
+    now.appendChild(info);
+    var incBox=el('div','sn-inc');
+    var bigNum=el('div','n'+(p.tier>0?' c':''), fmtR(inc));
+    incBox.appendChild(bigNum); incBox.appendChild(el('small',null,'实际每秒'));
+    now.appendChild(incBox);
+    mBody.appendChild(now);
+
+    // 出售
+    var sellBtn=el('button','buy','出售 (退回 60%)');
+    var refund=Math.floor(car.cost*0.6);
+    sellBtn.title='退回 '+fmt(refund);
+    sellBtn.onclick=function(){ sellCar(i); };
+    var sellRow=el('div','btnrow'); sellRow.appendChild(sellBtn);
+    mBody.appendChild(sellRow);
+
+    // 升级车位
+    var canUp = nextTierIdx(p.tier);
+    if(canUp!=null){
+      var upTier=TIERS[canUp];
+      var upLocked=curLevel()<upTier.lv;
+      mBody.appendChild(el('div','secttl','升级车位'));
+      var upRow=el('div','carow');
+      var usw=el('div','swatch'); usw.style.background='linear-gradient(135deg,'+upTier.line+','+shade(upTier.line,-30)+')';
+      upRow.appendChild(usw);
+      var ui=el('div','ci');
+      ui.appendChild(el('b',null,upTier.name));
+      ui.appendChild(el('div','desc','收益倍率 '+tier.mult.toFixed(1)+'× → '+upTier.mult.toFixed(1)+'×，每秒多赚 '+fmtR(car.inc*(upTier.mult-tier.mult)*p.buff*globalMult())));
+      upRow.appendChild(ui);
+      var ub=el('button','buy gold','升级 ¥'+fmt(upTier.upCost));
+      ub.disabled = upLocked || state.money<upTier.upCost;
+      if(upLocked){ ub.textContent='Lv'+upTier.lv+' 解锁'; }
+      ub.onclick=function(){ upgradeTier(i); };
+      upRow.appendChild(ub);
+      mBody.appendChild(upRow);
+    }
+
+    // 换车
+    mBody.appendChild(el('div','secttl','换一辆车 (旧车自动按 60% 退回)'));
+    var list=el('div','carlist');
+    buildCarList(p.car, function(ci){ replaceCar(i,ci); }).forEach(function(n){list.appendChild(n);});
+    mBody.appendChild(list);
+
+  } else {
+    mBody.appendChild(el('div','sub','空空如也。选一辆车停进来，它就会一刻不停地替你赚钱。'));
+    mBody.appendChild(el('div','secttl','选择车型'));
+    var list2=el('div','carlist');
+    buildCarList(null, function(ci){ buyCar(i,ci); }).forEach(function(n){list2.appendChild(n);});
+    mBody.appendChild(list2);
+  }
+}
+
+function openAch(){
+  ensureAudio(); sfx('click');
+  openModal('成就 ('+countAch()+'/'+ACH.length+')');
+  ACH.forEach(function(a){
+    var done=!!state.ach[a.key];
+    var row=el('div','achrow'+(done?' done':''));
+    row.appendChild(el('div','ach-ico',a.ico));
+    var info=el('div','ai');
+    info.appendChild(el('b',null,a.name+(done?'  ✓':'')));
+    info.appendChild(el('small',null,a.desc));
+    row.appendChild(info);
+    row.appendChild(el('div','ar', a.reward>0?('奖励 ¥'+fmt(a.reward)):'纪念'));
+    mBody.appendChild(row);
   });
 }
 
-function park(i) {
-  if (state.slots[i]) return;
-  if (!selected) { msg('先在商店选一辆车'); return; }
-  const c = CARM[selected];
-  if (state.coin < c.cost) { msg('金币不够，买不起' + c.name); return; }
-  state.coin -= c.cost;
-  state.slots[i] = selected;
-  save(); render();
-  msg('买入 ' + c.emoji + c.name + '，停入车位 ' + (i + 1));
+function openHelp(){
+  ensureAudio(); sfx('click');
+  openModal('玩法说明');
+  var box=el('div','help');
+  var lines=[
+    ['b','核心循环：','买辆车停进车位 → 它自动按秒赚停车费 → 攒钱买更贵的车、扩建车位、升级车位档位。'],
+    ['k','车型递进：','从共享单车一路升级到私人直升机，越贵每秒赚得越多，但车位有限，得精打细算。'],
+    ['g','车位档位：','普通 → 黄金(1.6×) → 白金(2.5×)。同一辆车，停在白金车位收益翻倍多。'],
+    ['b','等级系统：','累计赚取自动涨经验，升级解锁新车型与车位升级权限。'],
+    ['k','随机事件：','交警贴条、VIP 小费、刮刮乐、夜市爆满……随时有惊喜或惊吓。'],
+    ['g','离线收益：','关掉也会赚钱（按 40% 结算，最多 8 小时），回来有钱拿。'],
+    ['b','小贴士：','点车位可随时换车、出售、升级。前期先铺满便宜车，再逐辆换豪车。']
+  ];
+  lines.forEach(function(l){
+    var p=el('p'); var b=el('b',null,l[0]); p.appendChild(b); p.appendChild(document.createTextNode(l[1])); box.appendChild(p);
+  });
+  mBody.appendChild(box);
 }
-function expand() {
-  if (state.coin < state.expandPrice) return;
-  state.coin -= state.expandPrice;
-  state.slots.push(null);
-  state.expandPrice = Math.ceil(state.expandPrice * 2);
-  save(); render();
-  msg('扩建成功！现有 ' + state.slots.length + ' 个车位');
-}
-document.getElementById('expandBtn').addEventListener('click', expand);
 
-settleOffline();
-render();
-setInterval(function () { state.coin += rate(); render(); }, 1000);
-setInterval(save, 5000);
-window.addEventListener('beforeunload', save);
+/* ---------- 9. 交易动作 ---------- */
+function buyCar(spotIdx, carIdx){
+  var car=CARS[carIdx], p=state.spots[spotIdx];
+  if(curLevel()<car.lv){ toast('等级不足，Lv'+car.lv+' 解锁','bad'); return; }
+  if(p.car!=null){ toast('该车位已有车','bad'); return; }
+  if(state.money<car.cost){ toast('现金不足','bad'); return; }
+  state.money-=car.cost; p.car=carIdx; p.anim=0;
+  state.bestCar=Math.max(state.bestCar,carIdx);
+  pushLog('停入 '+car.name+' (P'+(spotIdx+1)+')','good');
+  toast('停入 '+car.name,'good'); sfx('buy'); checkAch(); refreshTop(); saveSoon(); closeModal();
+}
+function replaceCar(spotIdx, carIdx){
+  var p=state.spots[spotIdx];
+  if(p.car==null){ buyCar(spotIdx,carIdx); return; }
+  if(p.car===carIdx){ closeModal(); return; }
+  var car=CARS[carIdx], old=CARS[p.car];
+  if(curLevel()<car.lv){ toast('等级不足，Lv'+car.lv+' 解锁','bad'); return; }
+  var refund=Math.floor(old.cost*0.6);
+  var need=car.cost-refund;
+  if(state.money<need){ toast('现金不足 (换车需 ¥'+fmt(need)+')','bad'); return; }
+  state.money-=need; p.car=carIdx; p.anim=0;
+  state.bestCar=Math.max(state.bestCar,carIdx);
+  pushLog(old.name+' → '+car.name+' (P'+(spotIdx+1)+', 退回 '+fmt(refund)+')','good');
+  toast('换车成功：'+car.name,'gold'); sfx('buy'); checkAch(); refreshTop(); saveSoon(); closeModal();
+}
+function sellCar(spotIdx){
+  var p=state.spots[spotIdx]; if(p.car==null) return;
+  var car=CARS[p.car]; var refund=Math.floor(car.cost*0.6);
+  state.money+=refund; p.car=null; p.anim=1;
+  pushLog('出售 '+car.name+'，退回 '+fmt(refund),'');
+  toast('出售成功 +¥'+fmt(refund),'gold'); sfx('sell'); refreshTop(); saveSoon(); closeModal();
+}
+function upgradeTier(spotIdx){
+  var p=state.spots[spotIdx]; var ni=nextTierIdx(p.tier); if(ni==null) return;
+  var up=TIERS[ni];
+  if(curLevel()<up.lv){ toast('Lv'+up.lv+' 解锁','bad'); return; }
+  if(state.money<up.upCost){ toast('现金不足','bad'); return; }
+  state.money-=up.upCost; p.tier=ni;
+  pushLog('P'+(spotIdx+1)+' 升级为 '+up.name,'evt');
+  toast(up.name+' 已升级','gold'); sfx('upgrade'); checkAch(); refreshTop(); saveSoon();
+  openSpot(spotIdx);
+}
+function nextTierIdx(cur){ return cur<2?cur+1:null; }
+
+function doExpand(){
+  if(state.spots.length>=MAX_SPOTS){ toast('车位已满','bad'); return; }
+  var cost=expandCostAt(state.spots.length);
+  if(state.money<cost){ toast('现金不足','bad'); return; }
+  state.money-=cost;
+  state.spots.push({tier:0,car:null,anim:1,buff:1,buffExp:0});
+  state.expandCost=expandCostAt(state.spots.length);
+  computeLayout();
+  pushLog('扩建车位！现有 '+state.spots.length+' 位','evt');
+  toast('扩建成功！车位 +1','cyan'); sfx('expand'); checkAch(); refreshTop(); saveSoon();
+}
+
+/* ---------- 10. 等级 ---------- */
+function curLevel(){
+  var lv=1; for(var i=0;i<LEVELS.length;i++){ if(state.lifetime>=LEVELS[i].at) lv=i+1; else break; } return lv;
+}
+function levelInfo(){
+  var lv=curLevel(); var cur=LEVELS[lv-1].at; var next=lv<LEVELS.length?LEVELS[lv].at:LEVELS[lv-1].at;
+  return {lv:lv,cur:cur,next:next};
+}
+function checkLevelUp(prevLv){
+  var lv=curLevel(); if(lv>prevLv){
+    var info=LEVELS[lv-1];
+    toast('升级！Lv'+lv+(info.unlock?' · 解锁：'+info.unlock:''),'lvl');
+    sfx('level'); pushLog('升至 Lv'+lv+(info.unlock?'，解锁 '+info.unlock:''),'evt');
+  }
+}
+
+/* ---------- 11. 成就 ---------- */
+function countAch(){ var n=0; for(var k in state.ach) if(state.ach[k]) n++; return n; }
+function checkAch(){
+  var filled=0; for(var i=0;i<state.spots.length;i++) if(state.spots[i].car!=null) filled++;
+  var owned={}; for(var j=0;j<state.spots.length;j++){ if(state.spots[j].car!=null) owned[state.spots[j].car]=true; }
+  var anyGold=state.spots.some(function(p){return p.tier>=1;});
+  var anyPlat=state.spots.some(function(p){return p.tier>=2;});
+  var cond={
+    first: state.lifetime>=1000,
+    fleet5: filled>=5,
+    gold: anyGold,
+    sport: !!owned[CARMAP.sport],
+    platinum: anyPlat,
+    million: state.money>=1000000,
+    limo: !!owned[CARMAP.limo],
+    full: filled>0 && filled===state.spots.length,
+    heli: !!owned[CARMAP.heli],
+    tycoon: curLevel()>=15
+  };
+  ACH.forEach(function(a){
+    if(!state.ach[a.key] && cond[a.key]){
+      state.ach[a.key]=true;
+      if(a.reward>0){ state.money+=a.reward; }
+      pushLog('成就解锁：'+a.name+(a.reward>0?' (+'+fmt(a.reward)+')':''),'evt');
+      toast('成就：'+a.name+(a.reward>0?'  +¥'+fmt(a.reward):''),'gold'); sfx('gold');
+    }
+  });
+}
+
+/* ---------- 12. 随机事件 ---------- */
+function pickEvent(){
+  var tot=0; EVENTS.forEach(function(e){tot+=e.w;});
+  var r=Math.random()*tot;
+  for(var i=0;i<EVENTS.length;i++){ r-=EVENTS[i].w; if(r<=0) return EVENTS[i]; }
+  return EVENTS[0];
+}
+function runEvent(){
+  var e=pickEvent(); var now=Date.now(); var inc=totalIncome(false); var lvl=curLevel();
+  var gain=0, loss=0;
+  switch(e.key){
+    case 'ticket':
+      loss=Math.max(carMidCost()*0.4, inc*30); loss=Math.min(loss,state.money);
+      state.money-=loss;
+      pushLog(e.name+'：被罚 ¥'+fmt(loss),'bad'); toast(e.desc,'bad'); sfx('bad'); break;
+    case 'vip':
+      gain=inc*60+50;
+      state.money+=gain; state.lifetime+=gain;
+      pushLog(e.name+'：+¥'+fmt(gain),'good'); toast(e.desc,'good'); sfx('coin'); break;
+    case 'scratch':
+      // 95% 小奖，5% 大奖
+      if(Math.random()<0.05){ gain=inc*300+carMidCost(); } else { gain=inc*40+200; }
+      state.money+=gain; state.lifetime+=gain;
+      pushLog(e.name+'：+¥'+fmt(gain)+'!','evt'); toast('刮刮乐中奖 +¥'+fmt(gain),'gold'); sfx('gold'); break;
+    case 'boom':
+      gBuff.push({mult:2,exp:now+30000,name:'夜市爆满 ×2',tone:'good'});
+      pushLog(e.name,'good'); toast(e.desc,'good'); sfx('good'); break;
+    case 'fest':
+      gBuff.push({mult:2.5,exp:now+40000,name:'年终大促 ×2.5',tone:'good'});
+      pushLog(e.name,'evt'); toast(e.desc,'gold'); sfx('gold'); break;
+    case 'ride':
+      var occ=[]; for(var i=0;i<state.spots.length;i++) if(state.spots[i].car!=null&&state.spots[i].buff===1) occ.push(i);
+      if(occ.length){ var idx=occ[Math.floor(Math.random()*occ.length)];
+        state.spots[idx].buff=3; state.spots[idx].buffExp=now+25000;
+        pushLog(e.name+'：P'+(idx+1)+' 单车 ×3','good'); toast(e.desc,'good'); sfx('good');
+      } break;
+    case 'block':
+      var occ2=[]; for(var j=0;j<state.spots.length;j++) if(state.spots[j].car!=null&&state.spots[j].buff===1) occ2.push(j);
+      if(occ2.length){ var ix=occ2[Math.floor(Math.random()*occ2.length)];
+        state.spots[ix].buff=0; state.spots[ix].buffExp=now+20000;
+        pushLog(e.name+'：P'+(ix+1)+' 暂停收益 20 秒','bad'); toast(e.desc,'bad'); sfx('bad');
+      } break;
+  }
+  refreshTop(); saveSoon();
+}
+function carMidCost(){ // 一个参考金额：场上最贵车的成本
+  var m=0; for(var i=0;i<state.spots.length;i++){ if(state.spots[i].car!=null){ var c=CARS[state.spots[i].car].cost; if(c>m)m=c; } } return m||300;
+}
+
+/* ---------- 13. 日志 / Toast ---------- */
+function pushLog(text,cls){
+  var li=el('li',cls||'', '');
+  var time=new Date(); var hh=time.getHours(), mm=time.getMinutes();
+  var ts=el('b',null,(hh<10?'0':'')+hh+':'+(mm<10?'0':'')+' ');
+  li.appendChild(ts); li.appendChild(document.createTextNode(text));
+  var list=document.getElementById('logList');
+  list.insertBefore(li,list.firstChild);
+  while(list.childNodes.length>20) list.removeChild(list.lastChild);
+}
+var toastTimer={};
+function toast(text,kind){
+  var t=el('div','toast'+(kind?' '+kind:''), text);
+  var wrap=document.getElementById('toastWrap'); wrap.appendChild(t);
+  setTimeout(function(){ if(t.parentNode) t.parentNode.removeChild(t); }, 3050);
+}
+
+/* ---------- 14. 顶栏 / 侧栏刷新 ---------- */
+function refreshTop(){
+  document.getElementById('moneyStat').textContent=fmt(state.money);
+  document.getElementById('incomeStat').textContent=fmtR(totalIncome(false));
+  var li=levelInfo();
+  document.getElementById('levelStat').textContent='Lv'+li.lv;
+  var pct = li.next>li.cur ? clamp((state.lifetime-li.cur)/(li.next-li.cur),0,1) : 1;
+  document.getElementById('xpFill').style.width=(pct*100)+'%';
+  document.getElementById('xpText').textContent = li.lv<LEVELS.length ? ('Lv'+li.lv+' → '+(li.lv+1)) : ('Lv'+li.lv+' 满级');
+  // 侧栏
+  document.getElementById('spotCountStat').textContent=state.spots.length+' / '+MAX_SPOTS;
+  var filled=0; for(var i=0;i<state.spots.length;i++) if(state.spots[i].car!=null) filled++;
+  document.getElementById('filledStat').textContent=filled;
+  document.getElementById('kpiInc').textContent=fmtR(totalIncome(false))+' /秒';
+  document.getElementById('kpiLife').textContent=fmt(state.lifetime);
+  document.getElementById('kpiFleet').textContent=filled+' 辆';
+  document.getElementById('kpiBest').textContent = state.bestCar>=0 ? CARS[state.bestCar].name : '—';
+  // 扩建按钮
+  var eb=document.getElementById('btnExpand');
+  if(state.spots.length>=MAX_SPOTS){ eb.textContent='车位已满'; eb.disabled=true;
+    document.getElementById('expandSub').textContent='车位已扩至上限，专注升级车位档位与豪车吧。';
+  } else {
+    var cost=expandCostAt(state.spots.length);
+    eb.textContent='扩建车位 · ¥'+fmt(cost); eb.disabled=state.money<cost;
+    document.getElementById('expandSub').textContent='下一个车位 ¥'+fmt(cost)+'，新车位可停更强的车。';
+  }
+  // buff
+  var bw=document.getElementById('buffWrap'); bw.replaceChildren();
+  gBuff.forEach(function(b){ bw.appendChild(el('div','buff '+(b.tone==='good'?'good':'bad'), b.name+' · '+Math.ceil((b.exp-Date.now())/1000)+'秒')); });
+  for(var k=0;k<state.spots.length;k++){ var p=state.spots[k];
+    if(p.buff!==1 && p.buffExp>Date.now()){
+      var kind = p.buff>1?'good':'bad';
+      bw.appendChild(el('div','buff '+kind,'P'+(k+1)+' '+(p.buff>1?'×'+p.buff:'停收')+' · '+Math.ceil((p.buffExp-Date.now())/1000)+'秒'));
+    }
+  }
+}
+
+/* ---------- 15. 主循环 ---------- */
+var lastTick=performance.now(), saveAcc=0, evtAcc=0, prevLv=curLevel();
+function tick(now){
+  var dt=Math.min(5,(now-lastTick)/1000); lastTick=now;
+  var earn=totalIncome(false)*dt;
+  if(earn>0){ state.money+=earn; state.lifetime+=earn; }
+  // buff 清理
+  if(cleanBuffs(Date.now())) {}
+  // 事件
+  evtAcc+=dt; if(evtAcc>=state.nextEvt){
+    evtAcc=0; state.nextEvt=EVT_MIN+Math.random()*(EVT_MAX-EVT_MIN);
+    if(state.spots.some(function(p){return p.car!=null;})) runEvent();
+  }
+  // 成就里的现金类判定
+  checkAch();
+  // 升级
+  var lv=curLevel(); if(lv>prevLv){ checkLevelUp(prevLv); prevLv=lv; refreshTop(); }
+  // 刷新 UI（节流：每 0.25 秒）
+  uiAcc+=dt; if(uiAcc>=0.2){ uiAcc=0; refreshTop(); }
+  // 存档
+  saveAcc+=dt; if(saveAcc>=5){ saveAcc=0; save(); }
+  requestAnimationFrame(tick);
+}
+var uiAcc=0;
+var saveTimer=null;
+function saveSoon(){ if(saveTimer) return; saveTimer=setTimeout(function(){ saveTimer=null; save(); }, 600); }
+
+/* ---------- 16. 绑定 & 启动 ---------- */
+document.getElementById('btnAch').onclick=openAch;
+document.getElementById('btnHelp').onclick=openHelp;
+document.getElementById('btnExpand').onclick=doExpand;
+var resetArmed=false, resetTimer=null;
+document.getElementById('btnReset').onclick=function(){
+  ensureAudio();
+  if(!resetArmed){ resetArmed=true; toast('再点一次「重置」清空全部进度','bad');
+    resetTimer=setTimeout(function(){resetArmed=false;},3000); return; }
+  clearTimeout(resetTimer); resetArmed=false;
+  localStorage.removeItem(SAVE_KEY); state=freshState(); gBuff=[]; floaters=[];
+  computeLayout(); refreshTop(); pushLog('已重置，从零开始','evt'); toast('已重置','cyan');
+  document.getElementById('logList').replaceChildren(); pushLog('夜场开业，加油赚钱','evt');
+  sfx('click');
+};
+// 离开页面时存档
+document.addEventListener('visibilitychange',function(){ if(document.hidden) save(); });
+window.addEventListener('beforeunload',save);
+
+// 离线结算（用加载时记录的上次时间戳）
+  var earned=0;
+  try{ var raw=localStorage.getItem(SAVE_KEY); if(raw){ var s=JSON.parse(raw); if(s.last) earned=offlineCalc(s.last); } }catch(e){}
+  resize(); computeLayout(); refreshTop();
+  if(earned>0){
+    var mins=Math.round((OFFLINE_CAP)/60);
+    pushLog('离线收益 +¥'+fmt(earned),'good');
+    toast('欢迎回来！离线收益 +¥'+fmt(earned),'gold');
+  }
+  pushLog('夜场停车场，开门营业','evt');
+  // 首次进入提示
+  if(state.lifetime===0 && state.money<=150){ toast('点击空车位，买辆共享单车开始赚钱','cyan'); }
+  requestAnimationFrame(render);
+  requestAnimationFrame(tick);
+})();
+
 </script>
 </body>
 </html>
