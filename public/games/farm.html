@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>迷你种菜</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Microsoft YaHei", "PingFang SC", sans-serif;
+  background: linear-gradient(160deg, #e8f5e9 0%, #c8e6c9 50%, #a5d6a7 100%);
+  min-height: 100vh; padding: 14px; color: #2e3d2c; user-select: none;
+}
+h1 { text-align: center; font-size: 1.3rem; margin-bottom: 8px; }
+.bar {
+  display: flex; justify-content: space-between; align-items: center; gap: 10px;
+  background: rgba(255,255,255,.7); padding: 8px 14px; border-radius: 14px;
+  margin-bottom: 12px; box-shadow: 0 2px 8px rgba(0,0,0,.08); backdrop-filter: blur(6px);
+  flex-wrap: wrap;
+}
+.coin { font-size: 1.1rem; font-weight: bold; color: #d68910; white-space: nowrap; }
+.coin b { font-size: 1.4rem; }
+.shop { display: flex; gap: 8px; flex-wrap: wrap; }
+.shop button {
+  border: none; cursor: pointer; padding: 6px 10px; border-radius: 10px;
+  background: #fff; font-size: .85rem; box-shadow: 0 2px 4px rgba(0,0,0,.1);
+  transition: transform .1s; line-height: 1.3; text-align: center;
+}
+.shop button:hover { transform: translateY(-2px); }
+.shop button.sel { background: #ffe082; outline: 2px solid #ffb300; }
+.plots { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; max-width: 420px; margin: 0 auto; }
+.plot {
+  aspect-ratio: 1; background: #8d6e63; border-radius: 12px;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  cursor: pointer; position: relative; overflow: hidden;
+  box-shadow: inset 0 0 12px rgba(0,0,0,.25), 0 2px 6px rgba(0,0,0,.15);
+  border: 3px solid #6d4c41; transition: border-color .15s;
+}
+.plot:hover { border-color: #ffa726; }
+.plot .crop { font-size: 2.2rem; line-height: 1; transition: transform .3s; }
+.plot .lbl { font-size: .68rem; color: #fff; margin-top: 4px; text-align: center; text-shadow: 0 1px 2px rgba(0,0,0,.6); padding: 0 2px; }
+.plot.ready { background: #aed581; border-color: #fdd835; animation: glow 1s infinite alternate; }
+@keyframes glow { from { box-shadow: 0 0 4px #fdd835; } to { box-shadow: 0 0 16px #fdd835; } }
+#msg { text-align: center; margin-top: 10px; font-size: .85rem; color: #558b2f; height: 1.2em; font-weight: bold; }
+.hint { font-size: .72rem; opacity: .65; text-align: center; margin-top: 6px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<h1>🌱 迷你种菜</h1>
+<div class="bar">
+  <div class="coin">💰 <b id="coin">0</b></div>
+  <div class="shop" id="shop"></div>
+</div>
+<div class="plots" id="plots"></div>
+<div id="msg"></div>
+<div class="hint">商店点选作物 → 点空地种下 → 等成熟（黄边闪烁）→ 点击收获<br>关闭页面也不丢档，时间到了回来收就行。</div>
+
+<script>
+const CROPS = {
+  radish:    { name: "萝卜", emoji: "🥕", cost: 10,  grow: 15,  sell: 18  },
+  cabbage:   { name: "白菜", emoji: "🥬", cost: 30,  grow: 30,  sell: 45  },
+  watermelon:{ name: "西瓜", emoji: "🍉", cost: 80,  grow: 60,  sell: 135 },
+  pumpkin:   { name: "南瓜", emoji: "🎃", cost: 200, grow: 120, sell: 360 },
+};
+const PLOT_COUNT = 6;
+const KEY = "minifarm_v1";
+let state = JSON.parse(localStorage.getItem(KEY) || "null") || { coin: 50, plots: Array(PLOT_COUNT).fill(null) };
+if (!state.plots || state.plots.length < PLOT_COUNT) state.plots = Array(PLOT_COUNT).fill(null);
+let selected = null;
+
+function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
+function fmt(s) { s = Math.max(0, s); return s < 60 ? Math.ceil(s) + "秒" : Math.ceil(s / 60) + "分"; }
+function msg(t) { document.getElementById("msg").textContent = t; }
+
+function renderShop() {
+  const el = document.getElementById("shop");
+  el.innerHTML = "";
+  Object.entries(CROPS).forEach(([k, c]) => {
+    const b = document.createElement("button");
+    b.innerHTML = c.emoji + " " + c.name + "<br><span style='font-size:.68rem;opacity:.7'>" + c.cost + "💰·" + fmt(c.grow) + "→" + c.sell + "💰</span>";
+    if (selected === k) b.classList.add("sel");
+    b.onclick = () => {
+      selected = (selected === k ? null : k);
+      renderShop();
+      msg(selected ? "选中 " + c.emoji + c.name + "，点空地种下" : "");
+    };
+    el.appendChild(b);
+  });
+}
+
+function render() {
+  document.getElementById("coin").textContent = state.coin;
+  const el = document.getElementById("plots");
+  el.innerHTML = "";
+  const now = Date.now();
+  state.plots.forEach((p, i) => {
+    const d = document.createElement("div");
+    d.className = "plot";
+    if (!p) {
+      d.innerHTML = '<div class="crop" style="opacity:.3">➕</div><div class="lbl">空地</div>';
+      d.onclick = () => plant(i);
+    } else {
+      const c = CROPS[p.crop];
+      const elapsed = (now - p.t) / 1000;
+      const ready = elapsed >= c.grow;
+      if (ready) {
+        d.classList.add("ready");
+        d.innerHTML = '<div class="crop">' + c.emoji + '</div><div class="lbl">成熟！点我收</div>';
+        d.onclick = () => harvest(i);
+      } else {
+        const left = c.grow - elapsed;
+        const pct = Math.min(100, Math.round(elapsed / c.grow * 100));
+        d.innerHTML = '<div class="crop" style="transform:scale(' + (0.5 + 0.5 * pct / 100) + ')">' + c.emoji + '</div><div class="lbl">' + c.name + " " + fmt(left) + " " + pct + "%</div>";
+      }
+    }
+    el.appendChild(d);
+  });
+}
+
+function plant(i) {
+  if (state.plots[i]) return;
+  if (!selected) { msg("先在商店点选一种作物"); return; }
+  const c = CROPS[selected];
+  if (state.coin < c.cost) { msg("金币不够，种不起" + c.name); return; }
+  state.coin -= c.cost;
+  state.plots[i] = { crop: selected, t: Date.now() };
+  save(); render();
+  msg("种下了 " + c.emoji + c.name);
+}
+function harvest(i) {
+  const p = state.plots[i];
+  if (!p) return;
+  const c = CROPS[p.crop];
+  if ((Date.now() - p.t) / 1000 < c.grow) { msg("还没熟！"); return; }
+  state.coin += c.sell;
+  state.plots[i] = null;
+  save(); render();
+  msg("收获 " + c.emoji + c.name + "，+" + c.sell + "💰");
+}
+
+renderShop();
+render();
+setInterval(render, 1000);
+</script>
+</body>
+</html>

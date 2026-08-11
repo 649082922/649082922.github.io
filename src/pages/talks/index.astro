@@ -1,0 +1,94 @@
+---
+import { getCollection, render } from "astro:content";
+import type { CollectionEntry } from "astro:content";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
+import Markdown from "@components/misc/Markdown.astro";
+import { Icon } from "astro-icon/components";
+
+// 1) 取说说（生产环境过滤 draft）
+let talks = await getCollection("talks", ({ data }) =>
+	import.meta.env.PROD ? data.draft !== true : true
+);
+
+// 2) 按 published 倒序
+talks = talks.sort((a, b) =>
+	a.data.published.getTime() > b.data.published.getTime() ? -1 : 1
+);
+
+// 3) 预渲染每条正文 + 计算时间标签
+type TalkItem = CollectionEntry<"talks"> & {
+	Content: any;
+	dateLabel: string;
+	monthKey: string;
+};
+const items: TalkItem[] = await Promise.all(
+	talks.map(async (t) => {
+		const { Content } = await render(t);
+		const d = t.data.published;
+		const p = (n: number) => String(n).padStart(2, "0");
+		return {
+			...t,
+			Content,
+			monthKey: `${d.getFullYear()}-${p(d.getMonth() + 1)}`,
+			dateLabel: `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`,
+		};
+	})
+);
+
+// 4) 按月份分组（保持倒序）
+const groups: { monthKey: string; items: TalkItem[] }[] = [];
+for (const t of items) {
+	let g = groups.find((x) => x.monthKey === t.monthKey);
+	if (!g) {
+		g = { monthKey: t.monthKey, items: [] };
+		groups.push(g);
+	}
+	g.items.push(t);
+}
+
+let delay = 0;
+---
+<MainGridLayout title="说说" description="说说墙 · 短动态流">
+	<div class="flex flex-col gap-6 mb-4">
+		{groups.map((g) => (
+			<section class="transition flex flex-col gap-4">
+				<div class="flex items-center gap-3 px-1">
+					<div class="w-2.5 h-2.5 rounded-full bg-[var(--primary)]"></div>
+					<h2 class="text-xl font-bold text-90">{g.monthKey}</h2>
+					<div class="flex-1 h-px bg-[var(--meta-divider)]"></div>
+				</div>
+				<div class="flex flex-col gap-4 pl-5 ml-[4px] border-l-2 border-dashed border-[var(--meta-divider)]">
+					{g.items.map((t) => (
+						<article
+							class:list={["card-base rounded-[var(--radius-large)] p-6 relative onload-animation transition"]}
+							style={`animation-delay: calc(var(--content-delay) + ${delay++ * 50}ms);`}
+						>
+							<div class="flex flex-wrap items-center gap-3 mb-2 text-sm text-black/40 dark:text-white/40">
+								<span class="flex items-center gap-1 font-medium">
+									<Icon name="material-symbols:schedule-outline-rounded" class="text-lg" />
+									{t.dateLabel}
+								</span>
+								{t.data.mood && (
+									<span class="flex items-center gap-1 px-2 py-0.5 rounded-full bg-[var(--enter-btn-bg)] text-[var(--primary)] text-xs font-medium">
+										<Icon name="material-symbols:mood-rounded" class="text-base" />
+										{t.data.mood}
+									</span>
+								)}
+							</div>
+							<Markdown class="mt-1">
+								<t.Content />
+							</Markdown>
+							{t.data.tags && t.data.tags.length > 0 && (
+								<div class="flex flex-wrap gap-2 mt-3">
+									{t.data.tags.map((tag) => (
+										<span class="text-xs px-2 py-0.5 rounded-md bg-[var(--enter-btn-bg)] text-50">#{tag}</span>
+									))}
+								</div>
+							)}
+						</article>
+					))}
+				</div>
+			</section>
+		))}
+	</div>
+</MainGridLayout>

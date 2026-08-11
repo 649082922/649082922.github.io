@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>放置修仙</title>
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: "Microsoft YaHei","PingFang SC",sans-serif;
+  background: radial-gradient(ellipse at top, #2c1e4a 0%, #1a1228 60%, #0f0818 100%);
+  min-height: 100vh; padding: 14px; color: #e8d5ff; user-select: none; }
+h1 { text-align: center; font-size: 1.3rem; margin-bottom: 8px; color: #fff; text-shadow: 0 0 10px #b388ff; }
+.qi { text-align: center; font-size: 2rem; color: #ffd54f; font-weight: bold; text-shadow: 0 0 12px rgba(255,179,0,.55); }
+.rate { text-align: center; font-size: .85rem; color: #b388ff; margin: 4px 0 8px; }
+.realm { text-align: center; font-size: 1.05rem; color: #fff; margin-bottom: 6px; }
+.bar { background: rgba(255,255,255,.1); height: 14px; border-radius: 7px; overflow: hidden; margin: 0 auto 14px; max-width: 380px; border: 1px solid rgba(179,136,255,.3); }
+.bar > div { height: 100%; background: linear-gradient(90deg,#b388ff,#ffd54f); transition: width .3s; }
+.btns { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; margin-bottom: 14px; }
+button { cursor: pointer; border: none; border-radius: 10px; padding: 10px 16px; font-size: .9rem; font-weight: bold; transition: transform .1s, opacity .1s; font-family: inherit; }
+button:hover:not(:disabled) { transform: translateY(-2px); }
+.btn-cultivate { background: linear-gradient(135deg,#7c4dff,#b388ff); color: #fff; box-shadow: 0 2px 8px rgba(124,77,255,.5); }
+.btn-break { background: linear-gradient(135deg,#ff8a65,#ffd54f); color: #3e2723; }
+button:disabled { opacity: .4; cursor: not-allowed; }
+.ups { max-width: 420px; margin: 0 auto; display: flex; flex-direction: column; gap: 7px; }
+.up { display: flex; justify-content: space-between; align-items: center; background: rgba(179,136,255,.12); border: 1px solid rgba(179,136,255,.3); padding: 7px 12px; border-radius: 10px; }
+.up button { background: #5e35b1; color: #fff; padding: 6px 10px; font-size: .8rem; }
+.info { font-size: .8rem; line-height: 1.5; }
+.info b { color: #ffd54f; }
+.info span { color: #b388ff; }
+#msg { text-align: center; margin-top: 12px; font-size: .85rem; color: #b388ff; height: 1.2em; font-weight: bold; }
+.hint { font-size: .72rem; opacity: .6; text-align: center; margin-top: 8px; line-height: 1.5; }
+</style>
+</head>
+<body>
+<h1>⚡ 放置修仙</h1>
+<div class="qi">💫 <span id="qi">0</span></div>
+<div class="rate">灵气速率 <span id="rate">1</span>/秒</div>
+<div class="realm" id="realm">境界：练气一层</div>
+<div class="bar"><div id="bar" style="width:0%"></div></div>
+<div class="btns">
+  <button class="btn-cultivate" onclick="cultivate()">🧘 打坐 +<span id="manual">5</span></button>
+  <button class="btn-break" id="breakBtn" onclick="doBreak()">✨ 突破</button>
+</div>
+<div class="ups" id="ups"></div>
+<div id="msg"></div>
+<div class="hint">挂机自动攒灵气 → 够了点突破升境界 → 买法宝提速。关页面也算时间，存档本地。</div>
+
+<script>
+const REALMS = [
+  { name: '练气一层', cost: 50,     rate: 1 },
+  { name: '练气九层', cost: 300,    rate: 3 },
+  { name: '筑基',     cost: 2000,   rate: 10 },
+  { name: '金丹',     cost: 15000,  rate: 35 },
+  { name: '元婴',     cost: 100000, rate: 120 },
+  { name: '化神',     cost: 800000, rate: 400 },
+  { name: '炼虚',     cost: 6e6,    rate: 1500 },
+  { name: '合体',     cost: 5e7,    rate: 6000 },
+  { name: '大乘',     cost: 4e8,    rate: 25000 },
+  { name: '渡劫飞升', cost: 3e9,    rate: 120000 }
+];
+const UPS = [
+  { key: 'lingshi', name: '💎 灵石矿', base: 15,     rate: 1 },
+  { key: 'juling',  name: '🔮 聚灵阵', base: 120,    rate: 6 },
+  { key: 'danlu',   name: '⚗ 丹炉',   base: 1300,   rate: 30 },
+  { key: 'xianfu',  name: '🏯 洞天府', base: 14000,  rate: 140 },
+  { key: 'lingyao', name: '🌿 灵药园', base: 200000, rate: 780 }
+];
+const KEY = 'xian_v1';
+let state = JSON.parse(localStorage.getItem(KEY) || 'null') || { qi: 0, realm: 0, ups: {}, t: Date.now() };
+UPS.forEach(function (u) { if (state.ups[u.key] == null) state.ups[u.key] = 0; });
+
+function save() { state.t = Date.now(); localStorage.setItem(KEY, JSON.stringify(state)); }
+function fmt(n) {
+  n = Math.floor(n);
+  if (n < 1e4) return '' + n;
+  if (n < 1e8) return (n / 1e4).toFixed(n < 1e5 ? 1 : 0) + '万';
+  if (n < 1e12) return (n / 1e8).toFixed(2) + '亿';
+  return (n / 1e12).toFixed(2) + '兆';
+}
+function rate() { return REALMS[state.realm].rate + UPS.reduce(function (s, u) { return s + u.rate * state.ups[u.key]; }, 0); }
+function upPrice(u) { return Math.ceil(u.base * Math.pow(1.15, state.ups[u.key])); }
+
+function settleOffline() {
+  const now = Date.now();
+  const dt = (now - (state.t || now)) / 1000;
+  if (dt > 5) {
+    const gain = dt * rate();
+    state.qi += gain;
+  }
+  state.t = now;
+}
+
+function render() {
+  const r = rate();
+  const realm = REALMS[state.realm];
+  const next = REALMS[state.realm + 1];
+  document.getElementById('qi').textContent = fmt(state.qi);
+  document.getElementById('rate').textContent = fmt(r);
+  document.getElementById('realm').textContent = '境界：' + realm.name;
+  document.getElementById('manual').textContent = fmt(Math.max(5, Math.floor(r * 3)));
+  const breakBtn = document.getElementById('breakBtn');
+  if (next) {
+    document.getElementById('bar').style.width = Math.min(100, state.qi / next.cost * 100) + '%';
+    breakBtn.disabled = state.qi < next.cost;
+    breakBtn.textContent = '✨ 突破 (' + fmt(next.cost) + ')';
+  } else {
+    document.getElementById('bar').style.width = '100%';
+    breakBtn.disabled = true;
+    breakBtn.textContent = '🏆 已渡劫飞升';
+  }
+  const el = document.getElementById('ups');
+  el.innerHTML = '';
+  UPS.forEach(function (u) {
+    const cnt = state.ups[u.key];
+    const price = upPrice(u);
+    const div = document.createElement('div');
+    div.className = 'up';
+    const info = document.createElement('div');
+    info.className = 'info';
+    const b = document.createElement('b');
+    b.textContent = u.name + ' ×' + cnt;
+    const sp = document.createElement('span');
+    sp.textContent = ' +' + u.rate + '/秒  价 ' + fmt(price) + ' 灵气';
+    info.appendChild(b);
+    info.appendChild(document.createElement('br'));
+    info.appendChild(sp);
+    const btn = document.createElement('button');
+    btn.textContent = '修炼';
+    btn.disabled = state.qi < price;
+    btn.onclick = function () { buy(u); };
+    div.appendChild(info);
+    div.appendChild(btn);
+    el.appendChild(div);
+  });
+}
+
+function cultivate() {
+  const gain = Math.max(5, Math.floor(rate() * 3));
+  state.qi += gain;
+  save(); render();
+  document.getElementById('msg').textContent = '打坐 +' + fmt(gain) + ' 灵气';
+}
+function doBreak() {
+  const next = REALMS[state.realm + 1];
+  if (!next || state.qi < next.cost) return;
+  state.qi -= next.cost;
+  state.realm++;
+  save(); render();
+  document.getElementById('msg').textContent = '✨ 突破成功！踏入「' + REALMS[state.realm].name + '」';
+}
+function buy(u) {
+  const price = upPrice(u);
+  if (state.qi < price) return;
+  state.qi -= price;
+  state.ups[u.key]++;
+  save(); render();
+  document.getElementById('msg').textContent = '获得 ' + u.name + '（+' + u.rate + '/秒）';
+}
+
+settleOffline();
+render();
+setInterval(function () { state.qi += rate(); render(); }, 1000);
+setInterval(save, 5000);
+window.addEventListener('beforeunload', save);
+</script>
+</body>
+</html>

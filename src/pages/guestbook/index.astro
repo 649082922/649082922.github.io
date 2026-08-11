@@ -1,0 +1,20 @@
+---
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import Giscus from "@/components/Giscus.astro";
+---
+<MainGridLayout title="留言板" description="留言板 - 欢迎留下你的想法">
+	<div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
+		<div class="card-base z-10 px-9 py-6 relative w-full">
+			<h1 class="text-3xl font-bold text-[var(--primary)] mb-2">留言板</h1>
+			<p class="mb-6 opacity-75">欢迎在这里留下你的想法、问题或反馈，评论通过 GitHub Discussions 加载。</p>
+			<!-- 占位的 repoId / categoryId 记得替换成 giscus.app 给的真实值 -->
+			<Giscus
+				repo="649082922/649082922.github.io"
+				repoId="R_kgDOLxxxxx"
+				category="Announcements"
+				categoryId="DIC_kwDOLxxxxx"
+				mapping="pathname"
+			/>
+		</div>
+	</div>
+</MainGridLayout>
