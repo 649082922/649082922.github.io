@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>抢车位</title>
+<style>
+* { box-sizing:border-box; margin:0; padding:0; }
+body { font-family:"Microsoft YaHei","PingFang SC",sans-serif;
+  background:linear-gradient(160deg,#3a3a3a 0%,#2a2a2a 100%);
+  min-height:100vh; padding:14px; color:#eee; user-select:none; }
+h1 { text-align:center; font-size:1.3rem; margin-bottom:8px; color:#ffd54f; }
+.coin { text-align:center; font-size:1.8rem; color:#ffd54f; font-weight:bold; }
+.rate { text-align:center; font-size:.85rem; color:#81c784; margin:4px 0 12px; }
+.shop { display:flex; gap:8px; justify-content:center; flex-wrap:wrap; margin-bottom:14px; }
+.shop button { cursor:pointer; border:none; border-radius:10px; padding:8px 10px; background:#424242; color:#fff; font-size:.82rem; line-height:1.4; box-shadow:0 2px 4px rgba(0,0,0,.4); transition:transform .1s; font-family:inherit; text-align:center; }
+.shop button:hover:not(:disabled){ transform:translateY(-2px); }
+.shop button.sel { background:#f57f17; outline:2px solid #ffd54f; }
+.shop button:disabled { opacity:.4; cursor:not-allowed; }
+.slots { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; max-width:440px; margin:0 auto; }
+.slot { aspect-ratio:1; background:#1e1e1e; border:3px dashed #ffd54f; border-radius:8px; display:flex; flex-direction:column; align-items:center; justify-content:center; cursor:pointer; transition:border-color .15s; }
+.slot:hover { border-color:#fff; }
+.slot .car { font-size:2.4rem; }
+.slot .lbl { font-size:.7rem; color:#bbb; margin-top:4px; text-align:center; }
+.slot.filled { border-style:solid; border-color:#81c784; background:#263238; }
+.slot.filled .lbl { color:#81c784; }
+.expand { display:block; margin:14px auto 0; cursor:pointer; border:none; border-radius:10px; padding:8px 16px; background:#1565c0; color:#fff; font-size:.85rem; font-weight:bold; font-family:inherit; }
+.expand:disabled { opacity:.4; cursor:not-allowed; }
+#msg { text-align:center; margin-top:10px; font-size:.85rem; color:#ffd54f; height:1.2em; font-weight:bold; }
+.hint { font-size:.72rem; opacity:.6; text-align:center; margin-top:8px; line-height:1.5; }
+</style>
+</head>
+<body>
+<h1>🅿️ 抢车位</h1>
+<div class="coin">💰 <span id="coin">0</span></div>
+<div class="rate">停车收益 <span id="rate">0</span>/秒</div>
+<div class="shop" id="shop"></div>
+<div class="slots" id="slots"></div>
+<button class="expand" id="expandBtn">➕ 扩建车位 (<span id="expandCost">200</span>)</button>
+<div id="msg"></div>
+<div class="hint">商店选车 → 点空车位买下停入 → 自动赚停车费 → 攒钱买豪车/扩建。关页面也算钱，存档本地。</div>
+
+<script>
+const CARS = [
+  { key:'bicycle', emoji:'🚲', name:'自行车', cost:30,    income:1 },
+  { key:'moto',    emoji:'🏍️', name:'摩托车', cost:150,   income:6 },
+  { key:'car',     emoji:'🚗', name:'小轿车', cost:900,   income:32 },
+  { key:'sports',  emoji:'🏎️', name:'跑车',   cost:5000,  income:160 },
+  { key:'luxury',  emoji:'🚙', name:'豪车',   cost:28000, income:850 }
+];
+const CARM = {};
+CARS.forEach(function (c) { CARM[c.key] = c; });
+const KEY = 'park_v1';
+let state = JSON.parse(localStorage.getItem(KEY) || 'null') || { coin:50, slots:[null,null,null], expandPrice:200 };
+if (!state.slots || state.slots.length < 1) state.slots = [null,null,null];
+if (!state.expandPrice) state.expandPrice = 200;
+let selected = null;
+
+function save() { localStorage.setItem(KEY, JSON.stringify(state)); }
+function fmt(n) { n = Math.floor(n); if (n < 1e4) return '' + n; if (n < 1e8) return (n/1e4).toFixed(n<1e5?1:0) + '万'; if (n < 1e12) return (n/1e8).toFixed(2) + '亿'; return (n/1e12).toFixed(2) + '兆'; }
+function rate() { return state.slots.reduce(function (s, c) { return s + (c ? CARM[c].income : 0); }, 0); }
+function msg(t) { document.getElementById('msg').textContent = t; }
+
+function settleOffline() {
+  const now = Date.now();
+  const dt = (now - (state.t || now)) / 1000;
+  if (dt > 5) state.coin += dt * rate();
+  state.t = now;
+}
+
+function renderShop() {
+  const el = document.getElementById('shop');
+  el.innerHTML = '';
+  CARS.forEach(function (c) {
+    const b = document.createElement('button');
+    if (selected === c.key) b.classList.add('sel');
+    if (state.coin < c.cost) b.disabled = true;
+    const line1 = document.createElement('b');
+    line1.textContent = c.emoji + ' ' + c.name;
+    const line2 = document.createElement('div');
+    line2.style.fontSize = '.7rem';
+    line2.style.opacity = '.85';
+    line2.textContent = c.cost + '💰  +' + c.income + '/秒';
+    b.appendChild(line1);
+    b.appendChild(line2);
+    b.onclick = function () { selected = (selected === c.key ? null : c.key); render(); msg(selected ? '选中 ' + c.emoji + c.name + '，点空车位停入' : ''); };
+    el.appendChild(b);
+  });
+}
+
+function render() {
+  document.getElementById('coin').textContent = fmt(state.coin);
+  document.getElementById('rate').textContent = fmt(rate());
+  document.getElementById('expandCost').textContent = fmt(state.expandPrice);
+  document.getElementById('expandBtn').disabled = state.coin < state.expandPrice;
+  renderShop();
+  const el = document.getElementById('slots');
+  el.innerHTML = '';
+  state.slots.forEach(function (car, i) {
+    const d = document.createElement('div');
+    d.className = 'slot' + (car ? ' filled' : '');
+    if (!car) {
+      const ic = document.createElement('div');
+      ic.className = 'car'; ic.style.opacity = '.3'; ic.textContent = '🅿️';
+      const lbl = document.createElement('div');
+      lbl.className = 'lbl'; lbl.textContent = '空车位';
+      d.appendChild(ic); d.appendChild(lbl);
+      d.onclick = function () { park(i); };
+    } else {
+      const c = CARM[car];
+      const ic = document.createElement('div');
+      ic.className = 'car'; ic.textContent = c.emoji;
+      const lbl = document.createElement('div');
+      lbl.className = 'lbl'; lbl.textContent = c.name + ' +' + c.income + '/秒';
+      d.appendChild(ic); d.appendChild(lbl);
+    }
+    el.appendChild(d);
+  });
+}
+
+function park(i) {
+  if (state.slots[i]) return;
+  if (!selected) { msg('先在商店选一辆车'); return; }
+  const c = CARM[selected];
+  if (state.coin < c.cost) { msg('金币不够，买不起' + c.name); return; }
+  state.coin -= c.cost;
+  state.slots[i] = selected;
+  save(); render();
+  msg('买入 ' + c.emoji + c.name + '，停入车位 ' + (i + 1));
+}
+function expand() {
+  if (state.coin < state.expandPrice) return;
+  state.coin -= state.expandPrice;
+  state.slots.push(null);
+  state.expandPrice = Math.ceil(state.expandPrice * 2);
+  save(); render();
+  msg('扩建成功！现有 ' + state.slots.length + ' 个车位');
+}
+document.getElementById('expandBtn').addEventListener('click', expand);
+
+settleOffline();
+render();
+setInterval(function () { state.coin += rate(); render(); }, 1000);
+setInterval(save, 5000);
+window.addEventListener('beforeunload', save);
+</script>
+</body>
+</html>
