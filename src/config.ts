@@ -52,8 +52,8 @@ export const navBarConfig: NavBarConfig = {
 			url: "/games/", // 种菜等小游戏
 		},
 		{
-			name: "OBCP刷题",
-			url: "/quiz/", // OBCP 认证刷题 654 题
+			name: "刷题",
+			url: "/quiz/", // 刷题 654 题
 		},
 		{
 			name: "GitHub",
