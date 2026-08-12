@@ -64,7 +64,7 @@ export const navBarConfig: NavBarConfig = {
 };
 
 export const profileConfig: ProfileConfig = {
-	avatar: "assets/images/demo-avatar.png", // 先用 fuwari 默认头像，后续替换成自己的
+	avatar: "assets/images/demo-avatar.jpg", // AI 超分高清头像
 	name: "勇敢DBA不怕困难",
 	bio: "数据库 DBA，专注 OceanBase / Oracle / MySQL 等数据库的运维、调优与排障。公众号「勇敢DBA不怕困难」分享真实生产案例。",
 	signature: "不积跬步，无以至千里。",
