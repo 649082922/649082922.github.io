@@ -26,6 +26,9 @@ package-lock.json
 bun.lockb
 yarn.lock
 
+# local management tools
+.tools/
+
 # ide
 .idea
 *.iml
