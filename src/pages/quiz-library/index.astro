@@ -2,12 +2,12 @@
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 ---
 
-<MainGridLayout title="题库" description="新建或上传自己的题库，再开始答题">
+<MainGridLayout title="题库" description="上传 Excel 或 JSON 题库，再开始答题">
 	<section class="library-page onload-animation">
 		<header class="page-head">
 			<p>QUESTION LIBRARY</p>
-			<h1>先准备题库，再开始答题</h1>
-			<span>网站不再预装题目。你可以直接新建题库，也可以导入本地 JSON 文件；题库和答题记录只保存在当前浏览器。</span>
+			<h1>上传题库，直接开始答题</h1>
+			<span>不用逐题录入。选择 Excel 或 JSON 文件，网站会自动识别题型、题目、选项和答案；文件只在当前浏览器中处理。</span>
 		</header>
 
 		<div class="library-grid">
@@ -17,78 +17,28 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 				<small id="current-bank-summary"></small>
 				<div class="card-actions">
 					<a class="primary-action" href="/quiz/">继续答题</a>
-					<button id="edit-bank" type="button">编辑</button>
 					<button id="clear-bank" type="button">清空</button>
 				</div>
 			</section>
 
-			<button class="bank-card" id="new-bank" type="button">
-				<span class="bank-tag">从零开始</span>
-				<strong>新建题库</strong>
-				<small>填写题库名称，再逐题添加单选、多选或判断题。</small>
-				<div class="bank-meta"><b>网页内编辑</b><i>开始新建 →</i></div>
-			</button>
-
 			<label class="bank-card upload" for="quiz-file">
-				<span class="bank-tag">本地文件</span>
-				<strong>上传题库</strong>
-				<small>支持 JSON 文件，校验成功后会保存为当前题库并进入答题。</small>
-				<div class="bank-meta"><b>最大 4 MB</b><i>选择文件 →</i></div>
-				<input id="quiz-file" type="file" accept=".json,application/json" />
+				<span class="bank-tag">新建 / 替换题库</span>
+				<strong>上传 Excel 题库</strong>
+				<small>支持 .xlsx、.xls 和 .json。兼容“类别 / 题目 / 选项 / 答案”四列格式。</small>
+				<div class="bank-meta"><b>最大 10 MB</b><i>选择题库文件 →</i></div>
+				<input id="quiz-file" type="file" accept=".xlsx,.xls,.json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,application/json" />
 			</label>
 		</div>
-
-		<section class="bank-editor" id="bank-editor" hidden>
-			<div class="editor-head">
-				<div><span>题库编辑器</span><h2 id="editor-title">新建题库</h2></div>
-				<button id="cancel-edit" type="button">收起</button>
-			</div>
-
-			<label class="field bank-name-field">
-				<span>题库名称</span>
-				<input id="bank-name" maxlength="60" placeholder="例如：数据库基础练习" />
-			</label>
-
-			<div class="question-form">
-				<label class="field">
-					<span>题型</span>
-					<select id="question-type">
-						<option value="single">单选题</option>
-						<option value="multiple">多选题</option>
-						<option value="judge">判断题</option>
-					</select>
-				</label>
-				<label class="field question-field">
-					<span>题目</span>
-					<textarea id="question-text" rows="3" placeholder="输入题目内容"></textarea>
-				</label>
-				<label class="field options-field" id="options-field">
-					<span>选项（每行一个，不用填写 A、B）</span>
-					<textarea id="question-options" rows="4" placeholder="第一个选项&#10;第二个选项"></textarea>
-				</label>
-				<label class="field answer-field">
-					<span id="answer-label">答案字母</span>
-					<input id="question-answer" maxlength="6" placeholder="A；多选可填 AB" />
-				</label>
-				<button class="add-question" id="add-question" type="button">添加这道题</button>
-			</div>
-
-			<p class="editor-status" id="editor-status" aria-live="polite"></p>
-			<div class="draft-summary" id="draft-summary">还没有题目</div>
-			<div class="draft-list" id="draft-list"></div>
-			<div class="editor-actions">
-				<button id="save-bank" type="button">仅保存题库</button>
-				<button class="primary-action" id="save-and-start" type="button">保存并开始答题</button>
-			</div>
-		</section>
 
 		<div class="format-note">
 			<div>
-				<strong>上传文件格式</strong>
-				<span>支持 single、multiple、judge 三类题目，answer 使用 A–F 字母。</span>
+				<strong>Excel 格式</strong>
+				<span>首行为“类别、题目、选项、答案”。类别支持单选、多选、判断；选项用 A—、B—、C— 分隔。</span>
 			</div>
-			<code>{`{"single":[{"q":"题目","options":["A项","B项"],"answer":"A"}],"multiple":[],"judge":[]}`}</code>
+			<div class="example-row"><b>单选</b><span>OceanBase 的特点是？</span><code>A— 分布式数据库<br />B— 文本编辑器</code><b>A</b></div>
 		</div>
+
+		<div class="upload-progress" id="upload-progress" hidden><span id="progress-label">正在读取题库…</span><i></i></div>
 		<p class="upload-status" id="upload-status" aria-live="polite"></p>
 	</section>
 </MainGridLayout>
@@ -112,65 +62,50 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		--library-line: rgba(255, 244, 235, 0.17);
 	}
 	[hidden] { display: none !important; }
-	.page-head { max-width: 55rem; }
+	.page-head { max-width: 58rem; }
 	.page-head p { margin: 0 0 .8rem; color: var(--primary); font: 800 .72rem/1 ui-monospace, Consolas, monospace; letter-spacing: .14em; }
 	.page-head h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 1.08; letter-spacing: -.05em; color: var(--library-text); }
 	.page-head > span { display: block; margin-top: 1rem; font-size: .95rem; line-height: 1.75; color: var(--library-muted); }
-	.library-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 17rem), 1fr)); gap: clamp(.8rem, 1.6vw, 1.2rem); margin-top: clamp(1.6rem, 3vw, 2.4rem); }
-	.bank-card { min-height: 14rem; padding: clamp(1.15rem, 2vw, 1.65rem); border: 1px solid var(--library-line); border-radius: 1rem; background: color-mix(in srgb, var(--card-bg) 94%, var(--primary)); color: var(--library-text); text-align: left; cursor: pointer; display: flex; flex-direction: column; font: inherit; transition: transform 160ms ease, border-color 160ms ease, background 160ms ease; }
+	.library-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: clamp(.8rem, 1.6vw, 1.2rem); margin-top: clamp(1.6rem, 3vw, 2.4rem); }
+	.bank-card { min-height: 15rem; padding: clamp(1.2rem, 2.2vw, 1.8rem); border: 1px solid var(--library-line); border-radius: 1rem; background: color-mix(in srgb, var(--card-bg) 94%, var(--primary)); color: var(--library-text); text-align: left; cursor: pointer; display: flex; flex-direction: column; font: inherit; transition: transform 160ms ease, border-color 160ms ease, background 160ms ease; }
 	.bank-card:hover { transform: translateY(-2px); border-color: var(--primary); background: color-mix(in srgb, var(--primary) 6%, var(--card-bg)); }
 	.bank-card.current { cursor: default; }
 	.bank-tag { width: max-content; padding: .34rem .58rem; border-radius: .4rem; background: color-mix(in srgb, var(--primary) 13%, transparent); color: var(--primary); font-size: .68rem; font-weight: 800; }
-	.bank-card strong { margin-top: 1.25rem; font-size: clamp(1.12rem, 2vw, 1.4rem); color: var(--library-text); }
-	.bank-card small { max-width: 32rem; margin-top: .6rem; font-size: .82rem; line-height: 1.65; color: var(--library-muted); }
-	.bank-meta, .card-actions { margin-top: auto; padding-top: 1.25rem; display: flex; align-items: center; justify-content: space-between; gap: .65rem; font-size: .76rem; }
+	.bank-card strong { margin-top: 1.25rem; font-size: clamp(1.2rem, 2vw, 1.5rem); color: var(--library-text); }
+	.bank-card small { max-width: 36rem; margin-top: .65rem; font-size: .84rem; line-height: 1.7; color: var(--library-muted); }
+	.bank-meta, .card-actions { margin-top: auto; padding-top: 1.35rem; display: flex; align-items: center; justify-content: space-between; gap: .7rem; font-size: .76rem; }
 	.bank-meta b { color: var(--library-subtle); font-weight: 650; }
 	.bank-meta i { color: var(--primary); font-style: normal; font-weight: 800; }
-	.bank-card input[type="file"] { display: none; }
-	.card-actions { justify-content: flex-start; flex-wrap: wrap; }
-	.card-actions a, .card-actions button, .editor-actions button, .add-question, .editor-head button { border: 1px solid var(--library-line); border-radius: .55rem; padding: .62rem .82rem; background: transparent; color: var(--library-text); cursor: pointer; font: 700 .75rem/1 inherit; text-decoration: none; }
+	.bank-card input { display: none; }
+	.card-actions { justify-content: flex-start; }
+	.card-actions a, .card-actions button { border: 1px solid var(--library-line); border-radius: .55rem; padding: .66rem .88rem; background: transparent; color: var(--library-text); cursor: pointer; font: 700 .76rem/1 inherit; text-decoration: none; }
 	.primary-action { border-color: var(--primary) !important; background: var(--primary) !important; color: var(--btn-content) !important; }
-	.bank-editor { margin-top: 1.2rem; padding: clamp(1rem, 2.5vw, 1.6rem); border: 1px solid var(--library-line); border-radius: 1rem; background: color-mix(in srgb, var(--primary) 3%, var(--card-bg)); }
-	.editor-head { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
-	.editor-head span { color: var(--primary); font-size: .7rem; font-weight: 800; letter-spacing: .1em; }
-	.editor-head h2 { margin: .3rem 0 0; color: var(--library-text); font-size: 1.35rem; }
-	.field { display: flex; flex-direction: column; gap: .45rem; min-width: 0; }
-	.field > span { color: var(--library-muted); font-size: .74rem; font-weight: 700; }
-	.field input, .field textarea, .field select { width: 100%; box-sizing: border-box; border: 1px solid var(--library-line); border-radius: .58rem; padding: .72rem .8rem; background: color-mix(in srgb, var(--card-bg) 96%, var(--primary)); color: var(--library-text); font: inherit; outline: none; resize: vertical; }
-	.field input:focus, .field textarea:focus, .field select:focus { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 13%, transparent); }
-	.field input::placeholder, .field textarea::placeholder { color: var(--library-subtle); }
-	.bank-name-field { margin-top: 1.2rem; max-width: 34rem; }
-	.question-form { display: grid; grid-template-columns: minmax(8rem, .45fr) minmax(0, 1.55fr) minmax(9rem, .55fr); gap: .9rem; align-items: end; margin-top: 1rem; padding-top: 1rem; border-top: 1px solid var(--library-line); }
-	.question-field, .options-field { grid-column: span 2; }
-	.add-question { min-height: 2.85rem; border-color: var(--primary); color: var(--primary); }
-	.editor-status, .upload-status { min-height: 1.3em; margin: .8rem 0 0; font-size: .78rem; color: var(--primary); }
-	.draft-summary { margin-top: .8rem; padding: .75rem .85rem; border-radius: .6rem; background: color-mix(in srgb, var(--primary) 8%, transparent); color: var(--library-muted); font-size: .8rem; }
-	.draft-list { display: grid; gap: .55rem; margin-top: .65rem; }
-	.draft-item { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: .7rem; padding: .7rem .8rem; border: 1px solid var(--library-line); border-radius: .65rem; }
-	.draft-item b { color: var(--primary); font-size: .7rem; }
-	.draft-item span { overflow: hidden; color: var(--library-text); font-size: .8rem; text-overflow: ellipsis; white-space: nowrap; }
-	.draft-item button { border: 0; background: transparent; color: var(--library-muted); cursor: pointer; }
-	.editor-actions { display: flex; justify-content: flex-end; gap: .7rem; margin-top: 1rem; }
-	.format-note { margin-top: 1rem; padding: 1rem 1.1rem; border: 1px solid var(--library-line); border-radius: .8rem; background: color-mix(in srgb, var(--primary) 3%, transparent); display: grid; grid-template-columns: minmax(12rem, .55fr) minmax(0, 1.45fr); gap: 1rem; align-items: center; }
-	.format-note strong { display: block; font-size: .8rem; color: var(--library-text); }
-	.format-note span { display: block; margin-top: .3rem; font-size: .72rem; line-height: 1.5; color: var(--library-muted); }
-	.format-note code { padding: .65rem .75rem; border-radius: .5rem; background: rgba(128,120,112,.08); font-size: .68rem; color: var(--library-muted); overflow-x: auto; white-space: nowrap; }
-	@media (max-width: 760px) {
+	.format-note { margin-top: 1rem; padding: 1rem 1.1rem; border: 1px solid var(--library-line); border-radius: .8rem; background: color-mix(in srgb, var(--primary) 3%, transparent); display: grid; grid-template-columns: minmax(14rem, .6fr) minmax(0, 1.4fr); gap: 1rem; align-items: center; }
+	.format-note strong { display: block; font-size: .82rem; color: var(--library-text); }
+	.format-note span { display: block; margin-top: .32rem; font-size: .74rem; line-height: 1.55; color: var(--library-muted); }
+	.example-row { display: grid; grid-template-columns: auto minmax(8rem, 1fr) minmax(11rem, 1.5fr) auto; gap: .6rem; align-items: center; padding: .65rem .75rem; border-radius: .55rem; background: rgba(128,120,112,.08); color: var(--library-muted); font-size: .7rem; }
+	.example-row span { margin: 0; }
+	.example-row code { color: var(--library-muted); line-height: 1.45; }
+	.upload-progress { position: relative; overflow: hidden; margin-top: 1rem; padding: .78rem .9rem; border: 1px solid var(--library-line); border-radius: .65rem; color: var(--library-muted); font-size: .78rem; }
+	.upload-progress i { position: absolute; inset: auto 0 0; height: 3px; background: var(--primary); animation: progress 1.2s ease-in-out infinite; transform-origin: left; }
+	@keyframes progress { 0% { transform: scaleX(.05); } 50% { transform: scaleX(.72); } 100% { transform: translateX(100%) scaleX(.2); } }
+	.upload-status { min-height: 1.3em; margin: .8rem 0 0; font-size: .8rem; line-height: 1.6; color: var(--primary); }
+	@media (max-width: 720px) {
 		.library-page { padding: 1.1rem; border-radius: 1rem; }
-		.bank-card { min-height: 11.5rem; }
-		.question-form { grid-template-columns: 1fr; }
-		.question-field, .options-field { grid-column: auto; }
+		.bank-card { min-height: 12rem; }
 		.format-note { grid-template-columns: 1fr; }
+		.example-row { grid-template-columns: auto 1fr auto; }
+		.example-row code { grid-column: 1 / -1; }
 	}
 	@media (max-width: 440px) {
 		.library-page { padding: .9rem; }
 		.page-head h1 { font-size: 2rem; }
-		.format-note code { display: none; }
-		.editor-actions { align-items: stretch; flex-direction: column; }
 	}
 </style>
 
 <script>
+	import * as XLSX from "xlsx";
+
 	type QuizType = "single" | "multiple" | "judge";
 	type QuizQuestion = { q: string; options: string[]; answer: string };
 	type QuizBank = Record<QuizType, QuizQuestion[]>;
@@ -179,60 +114,113 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 	const NAME_KEY = "quiz-current-bank-name";
 	const ID_KEY = "quiz-current-bank-id";
 	const TYPES: QuizType[] = ["single", "multiple", "judge"];
-	const TYPE_NAMES: Record<QuizType, string> = { single: "单选", multiple: "多选", judge: "判断" };
 	const emptyBank = (): QuizBank => ({ single: [], multiple: [], judge: [] });
-	let draft = emptyBank();
-
 	const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
 	const fileInput = byId<HTMLInputElement>("quiz-file");
-	const uploadStatus = byId<HTMLElement>("upload-status");
-	const editor = byId<HTMLElement>("bank-editor");
-	const editorStatus = byId<HTMLElement>("editor-status");
-	const bankNameInput = byId<HTMLInputElement>("bank-name");
-	const typeInput = byId<HTMLSelectElement>("question-type");
-	const questionInput = byId<HTMLTextAreaElement>("question-text");
-	const optionsInput = byId<HTMLTextAreaElement>("question-options");
-	const answerInput = byId<HTMLInputElement>("question-answer");
+	const status = byId<HTMLElement>("upload-status");
+	const progress = byId<HTMLElement>("upload-progress");
+	const progressLabel = byId<HTMLElement>("progress-label");
 
 	function totalOf(bank: QuizBank) { return TYPES.reduce((sum, type) => sum + bank[type].length, 0); }
 	function makeId() { return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`; }
-	function asRecord(value: unknown): Record<string, unknown> | null { return value !== null && typeof value === "object" ? value as Record<string, unknown> : null; }
+	function cleanText(value: unknown) { return String(value ?? "").replace(/[\u200B-\u200D\uFEFF]/g, "").replace(/\r/g, "").trim(); }
+	function cleanQuestion(value: unknown) { return cleanText(value).replace(/\n?\s*选项及标注状态[：:]?\s*$/u, "").trim(); }
 
-	function normalizeQuestion(type: QuizType, raw: unknown): QuizQuestion | null {
-		const item = asRecord(raw);
-		if (!item) return null;
-		const q = String(item.q ?? item.question ?? "").trim();
-		let options = Array.isArray(item.options) ? item.options.map((value) => String(value).trim()).filter(Boolean) : [];
-		if (type === "judge" && options.length < 2) options = ["正确", "错误"];
-		const answer = [...new Set(String(item.answer ?? "").toUpperCase().match(/[A-F]/g) ?? [])].sort().join("");
-		if (!q) throw new Error("存在没有题干的题目");
-		if (options.length < 2 || options.length > 6) throw new Error(`“${q.slice(0, 18)}”的选项数量应为 2–6 个`);
-		if (!answer || [...answer].some((letter) => letter.charCodeAt(0) - 65 >= options.length)) throw new Error(`“${q.slice(0, 18)}”的答案超出选项范围`);
-		if (type !== "multiple" && answer.length !== 1) throw new Error(`“${q.slice(0, 18)}”只能有一个答案`);
-		return { q, options, answer };
+	function parseType(value: unknown): QuizType | null {
+		const type = cleanText(value).toLowerCase();
+		if (type.includes("多选") || type === "multiple") return "multiple";
+		if (type.includes("判断") || type === "judge" || type === "true/false") return "judge";
+		if (type.includes("单选") || type === "single") return "single";
+		return null;
 	}
 
-	function normalizeBank(input: unknown): QuizBank {
-		const result = emptyBank();
+	function parseOptions(value: unknown): string[] {
+		const text = cleanText(value);
+		const markers = [...text.matchAll(/(?:^|\n)\s*([A-F])(?:\s*[—–－\-.、:：]\s*|\s+)/g)];
+		if (markers.length < 2) return text.split(/\n+/).map((line) => line.replace(/^\s*[A-F](?:\s*[—–－\-.、:：]\s*|\s+)/, "").trim()).filter(Boolean);
+		return markers.map((match, index) => {
+			const start = (match.index ?? 0) + match[0].length;
+			const end = index + 1 < markers.length ? markers[index + 1].index : text.length;
+			return text.slice(start, end).trim();
+		}).filter(Boolean);
+	}
+
+	function normalizeAnswer(value: unknown) {
+		return [...new Set(cleanText(value).toUpperCase().match(/[A-F]/g) ?? [])].sort().join("");
+	}
+
+	function addQuestion(bank: QuizBank, type: QuizType, qValue: unknown, optionsValue: unknown, answerValue: unknown, row: number) {
+		const q = cleanQuestion(qValue);
+		const options = Array.isArray(optionsValue) ? optionsValue.map(cleanText).filter(Boolean) : parseOptions(optionsValue);
+		const answer = normalizeAnswer(answerValue);
+		if (!q) throw new Error(`第 ${row} 行缺少题目`);
+		if (options.length < 2 || options.length > 6) throw new Error(`第 ${row} 行识别到 ${options.length} 个选项，应为 2–6 个`);
+		if (!answer || [...answer].some((letter) => letter.charCodeAt(0) - 65 >= options.length)) throw new Error(`第 ${row} 行答案“${answer || "空"}”无效`);
+		if (type !== "multiple" && answer.length !== 1) throw new Error(`第 ${row} 行只能有一个答案`);
+		bank[type].push({ q, options, answer });
+	}
+
+	function bankFromRows(rows: unknown[][]): QuizBank {
+		const bank = emptyBank();
+		const headerIndex = rows.findIndex((row) => {
+			const cells = row.map(cleanText);
+			return cells.some((cell) => /^(类别|题型|类型)$/u.test(cell)) && cells.some((cell) => /^(题目|问题|题干)$/u.test(cell)) && cells.some((cell) => /^选项$/u.test(cell)) && cells.some((cell) => /^答案$/u.test(cell));
+		});
+		if (headerIndex < 0) throw new Error("没有找到“类别 / 题目 / 选项 / 答案”表头");
+		const headers = rows[headerIndex].map(cleanText);
+		const findColumn = (pattern: RegExp) => headers.findIndex((cell) => pattern.test(cell));
+		const typeColumn = findColumn(/^(类别|题型|类型)$/u);
+		const questionColumn = findColumn(/^(题目|问题|题干)$/u);
+		const optionsColumn = findColumn(/^选项$/u);
+		const answerColumn = findColumn(/^答案$/u);
+		const errors: string[] = [];
+		rows.slice(headerIndex + 1).forEach((row, index) => {
+			if (!row.some((cell) => cleanText(cell))) return;
+			const type = parseType(row[typeColumn]);
+			if (!type) { errors.push(`第 ${headerIndex + index + 2} 行题型无法识别`); return; }
+			try { addQuestion(bank, type, row[questionColumn], row[optionsColumn], row[answerColumn], headerIndex + index + 2); }
+			catch (error) { errors.push(error instanceof Error ? error.message : `第 ${headerIndex + index + 2} 行格式错误`); }
+		});
+		if (errors.length) throw new Error(`${errors[0]}${errors.length > 1 ? `；另有 ${errors.length - 1} 行未通过校验` : ""}`);
+		return bank;
+	}
+
+	function bankFromJson(input: unknown): QuizBank {
+		const bank = emptyBank();
 		if (Array.isArray(input)) {
-			input.forEach((raw) => {
-				const type = asRecord(raw)?.type;
-				if (type === "single" || type === "multiple" || type === "judge") result[type].push(normalizeQuestion(type, raw)!);
+			input.forEach((item, index) => {
+				if (!item || typeof item !== "object") return;
+				const data = item as Record<string, unknown>;
+				const type = parseType(data.type ?? data.category ?? data["类别"]);
+				if (type) addQuestion(bank, type, data.q ?? data.question ?? data["题目"], data.options ?? data["选项"], data.answer ?? data["答案"], index + 1);
 			});
-		} else {
-			const bank = asRecord(input);
-			if (bank) TYPES.forEach((type) => {
-				if (Array.isArray(bank[type])) bank[type].forEach((raw) => result[type].push(normalizeQuestion(type, raw)!));
+		} else if (input && typeof input === "object") {
+			const data = input as Record<string, unknown>;
+			TYPES.forEach((type) => {
+				if (Array.isArray(data[type])) data[type].forEach((item, index) => {
+					const question = item as Record<string, unknown>;
+					addQuestion(bank, type, question.q ?? question.question, question.options, question.answer, index + 1);
+				});
 			});
 		}
-		return result;
+		return bank;
+	}
+
+	async function readBank(file: File): Promise<QuizBank> {
+		if (/\.json$/i.test(file.name)) return bankFromJson(JSON.parse(await file.text()));
+		const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
+		for (const sheetName of workbook.SheetNames) {
+			const rows = XLSX.utils.sheet_to_json<unknown[]>(workbook.Sheets[sheetName], { header: 1, raw: false, defval: "" });
+			try { return bankFromRows(rows); } catch (error) {
+				if (error instanceof Error && !error.message.includes("没有找到")) throw error;
+			}
+		}
+		throw new Error("所有工作表中都没有找到可识别的题库表头");
 	}
 
 	function loadCurrent(): QuizBank | null {
-		try {
-			const value = localStorage.getItem(BANK_KEY);
-			return value ? normalizeBank(JSON.parse(value)) : null;
-		} catch { return null; }
+		try { const value = localStorage.getItem(BANK_KEY); return value ? bankFromJson(JSON.parse(value)) : null; }
+		catch { return null; }
 	}
 
 	function renderCurrent() {
@@ -246,97 +234,35 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		if (summary) summary.textContent = `${totalOf(bank)} 题 · 单选 ${bank.single.length} · 多选 ${bank.multiple.length} · 判断 ${bank.judge.length}`;
 	}
 
-	function openEditor(bank = emptyBank(), name = "") {
-		draft = normalizeBank(bank);
-		if (bankNameInput) bankNameInput.value = name;
-		if (editor) { editor.hidden = false; editor.scrollIntoView({ behavior: "smooth", block: "start" }); }
-		if (editorStatus) editorStatus.textContent = "";
-		renderDraft();
-	}
-
-	function renderDraft() {
-		const list = byId<HTMLElement>("draft-list");
-		const summary = byId<HTMLElement>("draft-summary");
-		if (!list || !summary) return;
-		list.replaceChildren();
-		summary.textContent = totalOf(draft) ? `共 ${totalOf(draft)} 题 · 单选 ${draft.single.length} · 多选 ${draft.multiple.length} · 判断 ${draft.judge.length}` : "还没有题目，请先在上方添加。";
-		TYPES.forEach((type) => draft[type].forEach((question, index) => {
-			const row = document.createElement("div"); row.className = "draft-item";
-			const badge = document.createElement("b"); badge.textContent = TYPE_NAMES[type];
-			const text = document.createElement("span"); text.textContent = question.q;
-			const remove = document.createElement("button"); remove.type = "button"; remove.textContent = "删除";
-			remove.addEventListener("click", () => { draft[type].splice(index, 1); renderDraft(); });
-			row.append(badge, text, remove); list.append(row);
-		}));
-	}
-
-	function persistDraft(start: boolean) {
-		const total = totalOf(draft);
-		if (!total) { if (editorStatus) editorStatus.textContent = "请至少添加一道题目。"; return; }
-		const name = bankNameInput?.value.trim() || "我的题库";
-		localStorage.setItem(BANK_KEY, JSON.stringify(draft));
-		localStorage.setItem(NAME_KEY, name);
-		localStorage.setItem(ID_KEY, makeId());
-		if (editorStatus) editorStatus.textContent = `“${name}”已保存，共 ${total} 题。`;
-		renderCurrent();
-		if (start) window.location.href = "/quiz/";
-	}
-
-	byId<HTMLButtonElement>("new-bank")?.addEventListener("click", () => openEditor());
-	byId<HTMLButtonElement>("edit-bank")?.addEventListener("click", () => {
-		const bank = loadCurrent();
-		if (bank) openEditor(bank, localStorage.getItem(NAME_KEY) || "我的题库");
-	});
-	byId<HTMLButtonElement>("cancel-edit")?.addEventListener("click", () => { if (editor) editor.hidden = true; });
 	byId<HTMLButtonElement>("clear-bank")?.addEventListener("click", () => {
 		if (!window.confirm("确定清空当前题库和它的本地答题记录吗？")) return;
 		const bankId = localStorage.getItem(ID_KEY);
 		localStorage.removeItem(BANK_KEY); localStorage.removeItem(NAME_KEY); localStorage.removeItem(ID_KEY);
 		if (bankId) Object.keys(localStorage).filter((key) => key.startsWith(`quiz-bank-${bankId}-`)).forEach((key) => localStorage.removeItem(key));
-		if (editor) editor.hidden = true;
 		renderCurrent();
 	});
 
-	typeInput?.addEventListener("change", () => {
-		const judge = typeInput.value === "judge";
-		const optionsField = byId<HTMLElement>("options-field");
-		if (optionsField) optionsField.hidden = judge;
-		const label = byId<HTMLElement>("answer-label");
-		if (label) label.textContent = judge ? "答案（A 正确 / B 错误）" : "答案字母";
-		if (answerInput) answerInput.placeholder = judge ? "A 或 B" : typeInput.value === "multiple" ? "例如 AB" : "例如 A";
-	});
-
-	byId<HTMLButtonElement>("add-question")?.addEventListener("click", () => {
-		try {
-			const type = (typeInput?.value || "single") as QuizType;
-			const options = type === "judge" ? ["正确", "错误"] : (optionsInput?.value || "").split(/\r?\n/).map((line) => line.trim()).filter(Boolean);
-			const question = normalizeQuestion(type, { q: questionInput?.value, options, answer: answerInput?.value });
-			if (question) draft[type].push(question);
-			if (questionInput) questionInput.value = "";
-			if (optionsInput) optionsInput.value = "";
-			if (answerInput) answerInput.value = "";
-			if (editorStatus) editorStatus.textContent = "题目已添加，可继续录入下一题。";
-			renderDraft(); questionInput?.focus();
-		} catch (error) { if (editorStatus) editorStatus.textContent = error instanceof Error ? error.message : "题目内容不完整"; }
-	});
-
-	byId<HTMLButtonElement>("save-bank")?.addEventListener("click", () => persistDraft(false));
-	byId<HTMLButtonElement>("save-and-start")?.addEventListener("click", () => persistDraft(true));
-
 	fileInput?.addEventListener("change", async () => {
-		const file = fileInput.files?.[0]; if (!file) return;
+		const file = fileInput.files?.[0];
+		if (!file) return;
 		try {
-			if (file.size > 4_000_000) throw new Error("题库文件不能超过 4 MB");
-			const normalized = normalizeBank(JSON.parse(await file.text()));
-			const total = totalOf(normalized);
+			if (file.size > 10_000_000) throw new Error("题库文件不能超过 10 MB");
+			if (progress) progress.hidden = false;
+			if (progressLabel) progressLabel.textContent = `正在识别 ${file.name}…`;
+			if (status) status.textContent = "";
+			await new Promise((resolve) => window.setTimeout(resolve, 40));
+			const bank = await readBank(file);
+			const total = totalOf(bank);
 			if (!total) throw new Error("没有读取到有效题目");
-			localStorage.setItem(BANK_KEY, JSON.stringify(normalized));
-			localStorage.setItem(NAME_KEY, file.name.replace(/\.json$/i, "") || "我的题库");
+			localStorage.setItem(BANK_KEY, JSON.stringify(bank));
+			localStorage.setItem(NAME_KEY, file.name.replace(/\.(xlsx?|json)$/i, "") || "我的题库");
 			localStorage.setItem(ID_KEY, makeId());
-			if (uploadStatus) uploadStatus.textContent = `已读取 ${total} 题，正在进入…`;
-			window.setTimeout(() => { window.location.href = "/quiz/"; }, 300);
+			if (status) status.textContent = `识别成功：共 ${total} 题（单选 ${bank.single.length}、多选 ${bank.multiple.length}、判断 ${bank.judge.length}），正在进入答题…`;
+			if (progress) progress.hidden = true;
+			window.setTimeout(() => { window.location.href = "/quiz/"; }, 500);
 		} catch (error) {
-			if (uploadStatus) uploadStatus.textContent = `导入失败：${error instanceof Error ? error.message : "JSON 格式不正确"}`;
+			if (progress) progress.hidden = true;
+			if (status) status.textContent = `导入失败：${error instanceof Error ? error.message : "无法识别文件"}`;
 			fileInput.value = "";
 		}
 	});
