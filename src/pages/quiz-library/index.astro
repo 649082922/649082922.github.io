@@ -1,0 +1,238 @@
+---
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+---
+
+<MainGridLayout title="题库" description="选择内置题库或上传自己的题库，再开始答题">
+	<section class="library-page onload-animation">
+		<header class="page-head">
+			<p>QUESTION LIBRARY</p>
+			<h1>选择题库，再开始答题</h1>
+			<span>进度保存在当前浏览器中。换一套题库，不会打断你的浏览和阅读。</span>
+		</header>
+
+		<div class="library-grid">
+			<a class="bank-card built-in" href="/quiz/">
+				<span class="bank-tag">内置题库</span>
+				<strong>OBCP v4 认证练习</strong>
+				<small>654 题 · 单选 333 · 多选 207 · 判断 114</small>
+				<div class="bank-meta"><b>推荐</b><i>开始答题 →</i></div>
+			</a>
+
+			<label class="bank-card upload" for="quiz-file">
+				<span class="bank-tag">本地题库</span>
+				<strong>上传自己的题库</strong>
+				<small>支持 JSON 文件，只保存在当前浏览器，不会上传到服务器。</small>
+				<div class="bank-meta"><b>最大 4 MB</b><i>选择文件 →</i></div>
+				<input id="quiz-file" type="file" accept=".json,application/json" />
+			</label>
+		</div>
+
+		<div class="format-note">
+			<div>
+				<strong>自定义题库格式</strong>
+				<span>支持 single、multiple、judge 三类题目，answer 使用 A–F 字母。</span>
+			</div>
+			<code>{`{"single":[{"q":"题目","options":["A项","B项"],"answer":"A"}],"multiple":[],"judge":[]}`}</code>
+		</div>
+
+		<p class="upload-status" id="upload-status" aria-live="polite"></p>
+	</section>
+</MainGridLayout>
+
+<style>
+	.library-page {
+		--library-text: #25211e;
+		--library-muted: #746d65;
+		--library-subtle: #948b82;
+		--library-line: rgba(37, 33, 30, 0.12);
+		padding: clamp(1.4rem, 3.5vw, 2.8rem);
+		border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
+		border-radius: 1.35rem;
+		background: var(--card-bg);
+		color: var(--library-text);
+	}
+	:global(.dark) .library-page {
+		--library-text: #f5eee8;
+		--library-muted: #c8bdb4;
+		--library-subtle: #9f958d;
+		--library-line: rgba(255, 244, 235, 0.14);
+	}
+	.page-head { max-width: 46rem; }
+	.page-head p {
+		margin: 0 0 0.8rem;
+		color: var(--primary);
+		font: 800 0.72rem/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+		letter-spacing: 0.14em;
+	}
+	.page-head h1 {
+		margin: 0;
+		font-size: clamp(2rem, 5vw, 3.6rem);
+		line-height: 1.08;
+		letter-spacing: -0.05em;
+		color: var(--library-text);
+	}
+	.page-head > span {
+		display: block;
+		margin-top: 1rem;
+		font-size: 0.95rem;
+		line-height: 1.75;
+		color: var(--library-muted);
+	}
+	.library-grid {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		gap: clamp(0.8rem, 1.6vw, 1.2rem);
+		margin-top: clamp(1.6rem, 3vw, 2.4rem);
+	}
+	.bank-card {
+		min-height: 15rem;
+		padding: clamp(1.2rem, 2.4vw, 1.8rem);
+		border: 1px solid var(--library-line);
+		border-radius: 1rem;
+		background: color-mix(in srgb, var(--card-bg) 94%, var(--primary));
+		color: var(--library-text);
+		text-align: left;
+		cursor: pointer;
+		display: flex;
+		flex-direction: column;
+		transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+	}
+	.bank-card:hover {
+		transform: translateY(-2px);
+		border-color: var(--primary);
+		background: color-mix(in srgb, var(--primary) 6%, var(--card-bg));
+	}
+	.bank-tag {
+		width: max-content;
+		padding: 0.34rem 0.58rem;
+		border-radius: 0.4rem;
+		background: color-mix(in srgb, var(--primary) 12%, transparent);
+		color: var(--primary);
+		font-size: 0.68rem;
+		font-weight: 800;
+	}
+	.bank-card strong { margin-top: 1.35rem; font-size: clamp(1.15rem, 2vw, 1.4rem); }
+	.bank-card small {
+		max-width: 32rem;
+		margin-top: 0.65rem;
+		font-size: 0.82rem;
+		line-height: 1.65;
+		color: var(--library-muted);
+	}
+	.bank-meta {
+		margin-top: auto;
+		padding-top: 1.4rem;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		font-size: 0.76rem;
+	}
+	.bank-meta b { color: var(--library-subtle); font-weight: 650; }
+	.bank-meta i { color: var(--primary); font-style: normal; font-weight: 800; }
+	.bank-card input { display: none; }
+	.format-note {
+		margin-top: 1rem;
+		padding: 1rem 1.1rem;
+		border: 1px solid var(--library-line);
+		border-radius: 0.8rem;
+		background: color-mix(in srgb, var(--primary) 3%, transparent);
+		display: grid;
+		grid-template-columns: minmax(12rem, 0.55fr) minmax(0, 1.45fr);
+		gap: 1rem;
+		align-items: center;
+	}
+	.format-note strong { display: block; font-size: 0.8rem; color: var(--library-text); }
+	.format-note span {
+		display: block;
+		margin-top: 0.3rem;
+		font-size: 0.72rem;
+		line-height: 1.5;
+		color: var(--library-muted);
+	}
+	.format-note code {
+		padding: 0.65rem 0.75rem;
+		border-radius: 0.5rem;
+		background: rgba(128, 120, 112, 0.08);
+		font-size: 0.68rem;
+		color: var(--library-muted);
+		overflow-x: auto;
+		white-space: nowrap;
+	}
+	.upload-status {
+		min-height: 1.3em;
+		margin: 0.8rem 0 0;
+		font-size: 0.78rem;
+		color: var(--primary);
+	}
+	@media (max-width: 720px) {
+		.library-page { padding: 1.2rem; border-radius: 1rem; }
+		.library-grid { grid-template-columns: 1fr; }
+		.bank-card { min-height: 11.5rem; }
+		.format-note { grid-template-columns: 1fr; }
+	}
+	@media (max-width: 440px) {
+		.library-page { padding: 1rem; }
+		.page-head h1 { font-size: 2rem; }
+		.format-note code { display: none; }
+	}
+</style>
+
+<script>
+	type QuizType = "single" | "multiple" | "judge";
+	type QuizQuestion = { q: string; options: string[]; answer: string };
+	type QuizBank = Record<QuizType, QuizQuestion[]>;
+
+	const fileInput = document.getElementById("quiz-file") as HTMLInputElement | null;
+	const status = document.getElementById("upload-status");
+
+	fileInput?.addEventListener("change", async () => {
+		const file = fileInput.files?.[0];
+		if (!file) return;
+		try {
+			if (file.size > 4_000_000) throw new Error("题库文件不能超过 4 MB");
+			const parsed: unknown = JSON.parse(await file.text());
+			const normalized = normalizeBank(parsed);
+			const total = normalized.single.length + normalized.multiple.length + normalized.judge.length;
+			if (!total) throw new Error("没有读取到有效题目");
+			localStorage.setItem("obcp-custom-bank", JSON.stringify(normalized));
+			localStorage.setItem("obcp-custom-bank-name", file.name.replace(/\.json$/i, ""));
+			if (status) status.textContent = `已读取 ${total} 题，正在进入…`;
+			window.setTimeout(() => { window.location.href = "/quiz/?bank=custom"; }, 350);
+		} catch (error) {
+			if (status) status.textContent = `导入失败：${error instanceof Error ? error.message : "JSON 格式不正确"}`;
+			fileInput.value = "";
+		}
+	});
+
+	function asRecord(value: unknown): Record<string, unknown> | null {
+		return value !== null && typeof value === "object" ? value as Record<string, unknown> : null;
+	}
+
+	function normalizeBank(input: unknown): QuizBank {
+		const result: QuizBank = { single: [], multiple: [], judge: [] };
+		const add = (type: QuizType, raw: unknown) => {
+			const item = asRecord(raw);
+			if (!item) return;
+			const q = String(item.q ?? item.question ?? "").trim();
+			const options = Array.isArray(item.options) ? item.options.map(String) : [];
+			const answer = String(item.answer ?? "").toUpperCase().replace(/[^A-F]/g, "");
+			if (q && options.length >= 2 && answer) result[type].push({ q, options, answer });
+		};
+
+		if (Array.isArray(input)) {
+			input.forEach((raw) => {
+				const item = asRecord(raw);
+				const type = item?.type;
+				if (type === "single" || type === "multiple" || type === "judge") add(type, raw);
+			});
+		} else {
+			const bank = asRecord(input);
+			if (bank) (Object.keys(result) as QuizType[]).forEach((type) => {
+				const list = bank[type];
+				if (Array.isArray(list)) list.forEach((item) => add(type, item));
+			});
+		}
+		return result;
+	}
+</script>

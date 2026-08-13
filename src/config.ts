@@ -51,7 +51,7 @@ export const navBarConfig: NavBarConfig = {
 		},
 		{
 			name: "题库",
-			url: "/#quiz-library", // 先选题库，再进入答题
+			url: "/quiz-library/", // 先选题库，再进入答题
 		},
 		LinkPreset.About,
 		{
