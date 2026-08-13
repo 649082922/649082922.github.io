@@ -134,6 +134,31 @@ body{
   .side-btn-submit{min-height:44px;flex:1.5;}
   .tab{font-size:11px;padding:9px 6px;}
 }
+
+/* 2026 focused practice refresh */
+:root{
+  --bg-primary:#f4f1eb;--bg-secondary:#ebe6dc;--bg-card:#fffdf9;
+  --bg-card-hover:#f6f1e8;--border-color:#ded7ca;--border-hover:#b9ad9b;
+  --text-primary:#20201e;--text-secondary:#716d65;--text-muted:#999287;
+  --accent-blue:#d04a2b;--accent-purple:#76533d;--accent-cyan:#168b85;
+  --accent-green:#237957;--accent-red:#bd3e32;--accent-orange:#b06c17;
+}
+body{background:var(--bg-primary);background-image:linear-gradient(rgba(40,38,33,.035) 1px,transparent 1px),linear-gradient(90deg,rgba(40,38,33,.035) 1px,transparent 1px);background-size:32px 32px;padding:0 18px 40px;color:var(--text-primary);}
+.container{max-width:1060px;}
+.header{display:flex;align-items:center;justify-content:space-between;text-align:left;margin:0 0 18px;padding:18px 0;border-bottom:1px solid var(--border-color);}
+.header-brand{margin:0;gap:10px}.logo{width:34px;height:34px;border-radius:8px;background:var(--text-primary);box-shadow:none;font-size:13px}.header h1{font-size:18px;letter-spacing:-.02em;background:none;-webkit-text-fill-color:currentColor;color:var(--text-primary)}
+.header p{margin:0;font:600 11px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;letter-spacing:.04em;color:var(--text-muted)}
+.back-home{color:var(--text-secondary);text-decoration:none;font-size:12px;font-weight:650;margin-right:14px}.back-home:hover{color:var(--accent-blue)}
+.stats-panel{grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}.stat-card{padding:12px 14px;border-radius:9px;background:var(--bg-card);backdrop-filter:none}.stat-card::before{height:2px}.stat-card:hover{transform:none}.stat-header{margin-bottom:5px}.stat-icon{display:none}.stat-rate{font-size:20px;display:inline}.stat-details{display:inline-flex;margin-left:10px}.stat-details span:not(:first-child){display:none}
+.main-card{border-radius:12px;background:var(--bg-card);backdrop-filter:none;box-shadow:0 12px 34px rgba(60,48,35,.07)}
+.tabs{margin:0;padding:8px;background:transparent;border-bottom:1px solid var(--border-color);border-radius:0;gap:5px}.tab{flex:0 1 auto;padding:9px 14px;border-radius:7px}.tab.active{background:var(--text-primary);color:#fff;box-shadow:none}.tab-badge{background:rgba(0,0,0,.06)}.tab.active .tab-badge,.tab[data-type].active .tab-badge{background:rgba(255,255,255,.16)}
+.actions{padding:9px 12px;border-bottom:1px solid var(--border-color)}.btn{border-radius:7px;background:transparent}.btn:hover{transform:none}.btn-primary{background:var(--accent-blue);box-shadow:none}.progress-bar{height:4px;background:var(--bg-secondary)}.progress-fill{background:var(--accent-blue);box-shadow:none}
+.page-nav{padding:10px 12px;justify-content:flex-start;background:#faf7f1;border-bottom:1px solid var(--border-color)}.page-nav>div{flex-wrap:nowrap!important;overflow-x:auto;justify-content:flex-start!important;padding-bottom:2px}.page-btn{padding:6px;min-width:32px;border-radius:6px;background:#fff}.page-btn.active{background:var(--accent-blue);border-color:var(--accent-blue)}.page-info{margin-left:auto;white-space:nowrap}.page-info input{width:58px;padding:6px;border-color:var(--border-color);background:#fff;color:var(--text-primary)}
+.question-area{padding:30px clamp(18px,5vw,52px);min-height:440px;display:block}.question-content{max-width:780px;margin:0 auto}.side-buttons{width:auto;max-width:780px;margin:24px auto 0;padding-top:18px;border-top:1px solid var(--border-color);display:grid!important;grid-template-columns:1fr 1.25fr 1fr;flex-direction:row}.side-btn{min-height:46px;flex-direction:row}.side-btn-submit{min-height:46px}
+.question-meta{margin-bottom:14px}.question-number .num{background:#eee7dd;color:var(--text-secondary)}.question-type-tag.single,.question-type-tag.multiple,.question-type-tag.judge{background:#eee7dd;color:var(--text-secondary)}
+.question-text{font-size:17px;line-height:1.75;padding:0;margin-bottom:22px;background:transparent;border:0;font-weight:620}.options{gap:10px}.option-item{padding:15px;border-radius:8px;background:#fff;border-color:var(--border-color)}.option-item:hover:not(.answered){transform:none;border-color:var(--accent-blue);background:#fffaf5}.option-letter{border:1px solid var(--border-color);background:#faf7f1}.option-item.selected{background:#fff4ed}.option-item.selected .option-letter{background:var(--accent-blue);border-color:var(--accent-blue)}
+.answer-area{border-radius:8px}.footer-note{color:var(--text-muted)}.toast{background:#25231f;border:0;border-radius:8px}.empty{padding:50px 20px}
+@media(max-width:700px){body{padding:0 10px 28px}.header{align-items:flex-start}.header-right{display:none}.stats-panel{grid-template-columns:repeat(2,1fr)}.stat-card{padding:10px}.tabs{overflow-x:auto}.tab{padding:9px 11px}.actions{overflow-x:auto;flex-wrap:nowrap}.question-area{padding:24px 16px}.question-text{font-size:16px}.side-buttons{grid-template-columns:1fr 1.1fr 1fr}.side-btn{font-size:11px;padding:10px 6px}.page-info{display:flex}.header p{display:none}}
 </style>
 </head>
 <body>
@@ -141,9 +166,9 @@ body{
   <div class="header">
     <div class="header-brand">
       <div class="logo">O</div>
-      <h1>OBCP 认证刷题</h1>
+      <div><h1>OBCP 认证刷题</h1><p>654 题 · 记录只保存在当前浏览器</p></div>
     </div>
-    <p>单选 333 · 多选 207 · 判断 114 · 共 654 题｜错题本 · 自动统计</p>
+    <div class="header-right"><a class="back-home" href="/">← 返回首页</a><p>FOCUS MODE / LOCAL PROGRESS</p></div>
   </div>
   <div class="stats-panel">
     <div class="stat-card single"><div class="stat-header"><h4>单选题</h4><div class="stat-icon">单</div></div><div class="stat-rate"><span id="single-rate">0</span><span class="stat-rate-suffix">%</span></div><div class="stat-details"><span><span class="dot"></span>答 <span id="single-total">0</span></span><span>对 <span id="single-correct">0</span></span><span>错 <span id="single-incorrect">0</span></span></div></div>
@@ -197,6 +222,7 @@ function load(){try{
   let s=localStorage.getItem(KEY+'stats');if(s)stats=JSON.parse(s);
   let w=localStorage.getItem(KEY+'wrong');if(w)wrongSet=new Set(JSON.parse(w));
   let m=localStorage.getItem(KEY+'mastered');if(m)mastered=new Set(JSON.parse(m));
+  for(var i=0;i<localStorage.length;i++){var k=localStorage.key(i);if(k&&k.indexOf(KEY+'stat-')===0)answeredQuestions.add(k.substring((KEY+'stat-').length));}
 }catch(e){}}
 function saveStats(){localStorage.setItem(KEY+'stats',JSON.stringify(stats));}
 function saveWrong(){localStorage.setItem(KEY+'wrong',JSON.stringify(Array.from(wrongSet)));}
@@ -307,14 +333,19 @@ function genPageNav(list){
   nav.classList.remove('hidden');
   var box=document.getElementById('page-nav-buttons');
   box.innerHTML='';
-  var total=list.length,size=20,ranges=[];
-  for(var i=0;i<total;i+=size){ranges.push({s:i+1,e:Math.min(i+size,total),i:i});}
-  ranges.forEach(function(r){
+  var total=list.length, indexes=[];
+  [0,currentIndex-3,currentIndex-2,currentIndex-1,currentIndex,currentIndex+1,currentIndex+2,currentIndex+3,total-1].forEach(function(i){if(i>=0&&i<total&&indexes.indexOf(i)<0)indexes.push(i);});
+  indexes.sort(function(a,b){return a-b;});
+  var last=-2;
+  indexes.forEach(function(i){
+    if(i-last>1){var gap=document.createElement('span');gap.textContent='…';gap.style.cssText='padding:5px 2px;color:var(--text-muted)';box.appendChild(gap);}
     var b=document.createElement('button');
-    b.className='page-btn'+(currentIndex>=r.i&&currentIndex<r.i+size?' active':'');
-    b.textContent=r.s+'-'+r.e;
-    b.addEventListener('click',function(){currentIndex=r.i;render();});
+    b.className='page-btn'+(currentIndex===i?' active':'');
+    b.textContent=i+1;
+    b.title='跳到第 '+(i+1)+' 题';
+    b.addEventListener('click',function(){currentIndex=i;render();});
     box.appendChild(b);
+    last=i;
   });
   var ji=document.getElementById('jump-input');
   ji.max=total;ji.value='';
@@ -348,7 +379,7 @@ function submit(){
     if(!correct){var wk=currentType+'-'+currentIndex;if(!wrongSet.has(wk)){wrongSet.add(wk);saveWrong();rebuildWrong();updateStats();showToast('已加入错题本');}}
   }
   render();
-  if(correct&&currentIndex<list.length-1){setTimeout(function(){if(currentIndex<questions[currentType].length-1){currentIndex++;render();}},1500);}
+  if(correct&&currentIndex<list.length-1){showToast('回答正确，可以进入下一题');}
 }
 // 事件绑定
 document.querySelectorAll('.tab').forEach(function(tab){
@@ -385,6 +416,12 @@ document.getElementById('reset-record').addEventListener('click',function(){
 document.getElementById('prev-btn-side').addEventListener('click',function(){if(currentIndex>0){currentIndex--;render();}});
 document.getElementById('next-btn-side').addEventListener('click',function(){if(currentIndex<questions[currentType].length-1){currentIndex++;render();}});
 document.getElementById('submit-btn').addEventListener('click',submit);
+document.addEventListener('keydown',function(e){
+  if(e.target&&e.target.tagName==='INPUT')return;
+  if(e.key==='ArrowLeft'&&currentIndex>0){currentIndex--;render();}
+  if(e.key==='ArrowRight'&&currentIndex<questions[currentType].length-1){currentIndex++;render();}
+  if(e.key==='Enter'&&!document.getElementById('submit-btn').disabled)submit();
+});
 // 初始化
 load();updateStats();rebuildWrong();render();
 </script>

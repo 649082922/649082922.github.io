@@ -12,7 +12,7 @@ export const siteConfig: SiteConfig = {
 	subtitle: "数据库运维实战笔记",
 	lang: "zh_CN", // Language code, e.g. 'en', 'zh_CN', 'ja', etc.
 	themeColor: {
-		hue: 345, // QZone 怀旧粉；备选 25(暖橙) / 200(青) / 250(蓝)
+		hue: 18, // 克制的暖红，接近纸张批注和 DBA 告警色
 		fixed: false, // Hide the theme color picker for visitors
 	},
 	banner: {
@@ -37,24 +37,23 @@ export const siteConfig: SiteConfig = {
 export const navBarConfig: NavBarConfig = {
 	links: [
 		LinkPreset.Home,
-		LinkPreset.Archive,
-		LinkPreset.About,
+		{
+			name: "实战笔记",
+			url: "/archive/",
+		},
 		{
 			name: "说说",
 			url: "/talks/", // 说说墙
-		},
-		{
-			name: "留言板",
-			url: "/guestbook/", // giscus 留言板
 		},
 		{
 			name: "小游戏",
 			url: "/games/", // 种菜等小游戏
 		},
 		{
-			name: "刷题",
+			name: "OBCP 刷题",
 			url: "/quiz/", // 刷题 654 题
 		},
+		LinkPreset.About,
 		{
 			name: "GitHub",
 			url: "https://github.com/649082922",
@@ -66,10 +65,8 @@ export const navBarConfig: NavBarConfig = {
 export const profileConfig: ProfileConfig = {
 	avatar: "assets/images/demo-avatar.jpg", // AI 超分高清头像
 	name: "勇敢DBA不怕困难",
-	bio: "数据库 DBA，专注 OceanBase / Oracle / MySQL 等数据库的运维、调优与排障。公众号「勇敢DBA不怕困难」分享真实生产案例。",
-	signature: "不积跬步，无以至千里。",
-	visitors: { today: 36, total: 20245 },
-	bgm: { src: "/assets/bgm.mp3", title: "城里的月光" },
+	bio: "一线数据库运维、调优与排障记录。主攻 OceanBase / Oracle / MySQL。",
+	signature: "先定位，再动手。",
 	links: [
 		{
 			name: "GitHub",
