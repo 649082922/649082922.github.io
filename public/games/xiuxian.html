@@ -203,18 +203,18 @@ var EVENTS=[
 
 /* ============ 成就 ============ */
 var ACHIEVEMENTS=[
-  {id:'a0',name:'初入仙门',desc:'首次突破境界',test:function(s){return s.realm>=1;}},
-  {id:'a1',name:'筑基有成',desc:'达到筑基境',test:function(s){return s.realm>=2;}},
-  {id:'a2',name:'金丹大道',desc:'结成金丹',test:function(s){return s.realm>=3;}},
-  {id:'a3',name:'元婴出窍',desc:'元婴大成',test:function(s){return s.realm>=4;}},
-  {id:'a4',name:'化神通天',desc:'化神境',test:function(s){return s.realm>=5;}},
-  {id:'a5',name:'炼虚合道',desc:'炼虚境',test:function(s){return s.realm>=6;}},
-  {id:'a6',name:'合体归一',desc:'合体境',test:function(s){return s.realm>=7;}},
-  {id:'a7',name:'大乘圆满',desc:'大乘境',test:function(s){return s.realm>=8;}},
-  {id:'a8',name:'渡劫飞升',desc:'渡劫成功',test:function(s){return s.realm>=9;}},
-  {id:'a9',name:'位列仙班',desc:'成就仙人',test:function(s){return s.realm>=10;}},
-  {id:'a10',name:'金仙业位',desc:'成就金仙',test:function(s){return s.realm>=11;}},
-  {id:'a11',name:'道祖归来',desc:'证道道祖',test:function(s){return s.realm>=12;}},
+  {id:'a0',name:'初入仙门',desc:'首次突破境界',test:function(s){return s.tribSuccess>=1;}},
+  {id:'a1',name:'筑基有成',desc:'达到筑基境',test:function(s){return s.realm>=1;}},
+  {id:'a2',name:'金丹大道',desc:'结成金丹',test:function(s){return s.realm>=2;}},
+  {id:'a3',name:'元婴出窍',desc:'元婴大成',test:function(s){return s.realm>=3;}},
+  {id:'a4',name:'化神通天',desc:'化神境',test:function(s){return s.realm>=4;}},
+  {id:'a5',name:'炼虚合道',desc:'炼虚境',test:function(s){return s.realm>=5;}},
+  {id:'a6',name:'合体归一',desc:'合体境',test:function(s){return s.realm>=6;}},
+  {id:'a7',name:'大乘圆满',desc:'大乘境',test:function(s){return s.realm>=7;}},
+  {id:'a8',name:'渡劫飞升',desc:'渡劫成功',test:function(s){return s.realm>=8;}},
+  {id:'a9',name:'位列仙班',desc:'成就仙人',test:function(s){return s.realm>=9;}},
+  {id:'a10',name:'金仙业位',desc:'成就金仙',test:function(s){return s.realm>=10;}},
+  {id:'a11',name:'道祖归来',desc:'证道道祖',test:function(s){return s.realm>=11;}},
   {id:'a12',name:'炼丹初成',desc:'第一次炼丹',test:function(s){return s.alchemyCount>=1;}},
   {id:'a13',name:'百劫不侵',desc:'成功渡劫 3 次',test:function(s){return s.tribSuccess>=3;}},
   {id:'a14',name:'灵气盈门',desc:'累计灵气过亿',test:function(s){return s.totalQi>=1e8;}},
@@ -236,7 +236,7 @@ var state={
   achievements:[], muted:false,
   lastSave:Date.now(), breaking:false,
   adventureCd:0,
-  tribSuccess:0, tribFail:0, alchemyCount:0, clickCount:0,
+  tribSuccess:0, tribFail:0, tribPity:0, alchemyCount:0, clickCount:0,
   maxOfflineGain:0, activeTab:'treasure'
 };
 
@@ -339,7 +339,8 @@ function computeTribRate(){
     }
   });
   activeBuffs().forEach(function(b){if(b.type==='tribAdd')add+=b.value;});
-  return Math.min(0.95,Math.max(0.02,(base+add)*mul));
+  var pity=Math.min(0.24,(Number(state.tribPity)||0)*0.08);
+  return Math.min(0.95,Math.max(0.08,(base+add)*mul+pity));
 }
 
 /* ============ 渲染 ============ */
@@ -388,6 +389,7 @@ function renderBreakBtn(){
   var btn=el('button','break-btn'+(can?'':' locked'),'');
   btn.appendChild(el('div','bb-main','渡劫突破 · '+next.name));
   btn.appendChild(el('div','bb-sub','消耗 '+fmt(cost)+' 灵气 · 成功率 '+Math.round(rate*100)+'%'));
+  if(state.tribPity>0)btn.appendChild(el('div','bb-sub','天道眷顾：连续失败 '+state.tribPity+' 次，本次已获保底加成'));
   if(!can)btn.disabled=true;
   else btn.addEventListener('click',attemptBreakthrough);
   wrap.appendChild(btn);
@@ -581,6 +583,7 @@ function attemptBreakthrough(){
       state.qi-=cost;
       state.realm++;
       state.tribSuccess++;
+      state.tribPity=0;
       sfx.breakthrough();
       var r=REALMS[state.realm];
       log('渡劫成功！晋升『'+r.name+'』'+(protectedBy?'（护体金丹护身）':''),'epic');
@@ -588,6 +591,7 @@ function attemptBreakthrough(){
       var loss=cost*0.25;
       state.qi=Math.max(0,state.qi-loss);
       state.tribFail++;
+      state.tribPity=Math.min(3,(state.tribPity||0)+1);
       log('天劫加身，渡劫失败！损失 '+fmt(loss)+' 灵气','bad');
     }
     checkAchievements();render();save();
@@ -686,6 +690,11 @@ function load(){
   if(!state.treasures)state.treasures=[];
   if(!state.achievements)state.achievements=[];
   if(!state.activeTab)state.activeTab='treasure';
+  state.realm=Math.max(0,Math.min(REALMS.length-1,Math.floor(Number(state.realm)||0)));
+  state.qi=Math.max(0,Number(state.qi)||0);
+  state.totalQi=Math.max(0,Number(state.totalQi)||0);
+  state.adventureCd=Math.max(0,Number(state.adventureCd)||0);
+  state.tribPity=Math.max(0,Math.min(3,Math.floor(Number(state.tribPity)||0)));
   // 离线结算
   var now=Date.now();
   var elapsed=(now-(state.lastSave||now))/1000;
@@ -697,6 +706,7 @@ function load(){
       if(og>state.maxOfflineGain)state.maxOfflineGain=og;
       pendingOfflineMsg='闭关 '+Math.round(secs/60)+' 分钟，静修得灵气 '+fmt(og);
     }
+    state.adventureCd=Math.max(0,state.adventureCd-secs);
   }
   state.lastSave=now;
   state.breaking=false;  // 重载时不在渡劫中

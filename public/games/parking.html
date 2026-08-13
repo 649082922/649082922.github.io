@@ -360,8 +360,18 @@ function load(){
     var base=freshState();
     s=Object.assign(base,s);
     if(!Array.isArray(s.spots)||s.spots.length<START_SPOTS) s.spots=base.spots;
-    s.spots.forEach(function(p){ if(p.anim==null) p.anim=1; if(p.buff==null){p.buff=1;p.buffExp=0;} });
+    s.spots=s.spots.slice(0,MAX_SPOTS);
+    s.spots.forEach(function(p){
+      if(p.anim==null) p.anim=1;
+      p.tier=Math.max(0,Math.min(TIERS.length-1,Math.floor(Number(p.tier)||0)));
+      p.car=p.car==null?null:Math.max(0,Math.min(CARS.length-1,Math.floor(Number(p.car)||0)));
+      if(p.buff==null){p.buff=1;p.buffExp=0;}
+      p.buff=Number(p.buff); if(!isFinite(p.buff))p.buff=1;
+    });
     if(!s.ach) s.ach={};
+    s.money=Math.max(0,Number(s.money)||0);
+    s.lifetime=Math.max(0,Number(s.lifetime)||0);
+    s.expandCost=expandCostAt(s.spots.length);
     s.last=Date.now();
     return s;
   }catch(e){ return freshState(); }
@@ -1020,7 +1030,7 @@ function runEvent(){
   var gain=0, loss=0;
   switch(e.key){
     case 'ticket':
-      loss=Math.max(carMidCost()*0.4, inc*30); loss=Math.min(loss,state.money);
+      loss=Math.max(carMidCost()*0.2, inc*15); loss=Math.min(loss,state.money*0.18);
       state.money-=loss;
       pushLog(e.name+'：被罚 ¥'+fmt(loss),'bad'); toast(e.desc,'bad'); sfx('bad'); break;
     case 'vip':
@@ -1047,8 +1057,8 @@ function runEvent(){
     case 'block':
       var occ2=[]; for(var j=0;j<state.spots.length;j++) if(state.spots[j].car!=null&&state.spots[j].buff===1) occ2.push(j);
       if(occ2.length){ var ix=occ2[Math.floor(Math.random()*occ2.length)];
-        state.spots[ix].buff=0; state.spots[ix].buffExp=now+20000;
-        pushLog(e.name+'：P'+(ix+1)+' 暂停收益 20 秒','bad'); toast(e.desc,'bad'); sfx('bad');
+        state.spots[ix].buff=0; state.spots[ix].buffExp=now+12000;
+        pushLog(e.name+'：P'+(ix+1)+' 暂停收益 12 秒','bad'); toast('有车临时占位，该车位停收 12 秒','bad'); sfx('bad');
       } break;
   }
   refreshTop(); saveSoon();
@@ -1112,7 +1122,7 @@ function refreshTop(){
 }
 
 /* ---------- 15. 主循环 ---------- */
-var lastTick=performance.now(), saveAcc=0, evtAcc=0, prevLv=curLevel();
+var lastTick=performance.now(), saveAcc=0, evtAcc=0, prevLv=curLevel(), hiddenAt=0;
 function tick(now){
   var dt=Math.min(5,(now-lastTick)/1000); lastTick=now;
   var earn=totalIncome(false)*dt;
@@ -1154,7 +1164,17 @@ document.getElementById('btnReset').onclick=function(){
   sfx('click');
 };
 // 离开页面时存档
-document.addEventListener('visibilitychange',function(){ if(document.hidden) save(); });
+document.addEventListener('visibilitychange',function(){
+  if(document.hidden){ hiddenAt=Date.now(); save(); return; }
+  var gap=(Date.now()-(state.last||hiddenAt||Date.now()))/1000;
+  var earned=offlineCalc(state.last||hiddenAt);
+  if(earned>0){
+    pushLog('后台经营 '+Math.round(Math.min(gap,OFFLINE_CAP)/60)+' 分钟，收益 +¥'+fmt(earned),'good');
+    toast('回来啦！后台收益 +¥'+fmt(earned),'gold');
+    checkAch(); refreshTop(); save();
+  }
+  lastTick=performance.now();
+});
 window.addEventListener('beforeunload',save);
 
 // 离线结算（用加载时记录的上次时间戳）

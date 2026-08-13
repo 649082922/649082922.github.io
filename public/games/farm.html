@@ -204,6 +204,7 @@
       </div>
     </div>
     <div class="weather-tag w-sunny" id="weatherTag"><span class="w-icon"></span><span id="weatherName">晴空万里</span></div>
+    <button class="reset-btn" id="batchBtn">一键照料</button>
     <button class="reset-btn" id="resetBtn">重置存档</button>
   </header>
 
@@ -216,7 +217,7 @@
       <div class="panel" style="flex:1.4;">
         <div class="panel-title"><b>种子商店</b><span class="cnt">点一下选种</span></div>
         <div id="shopList"></div>
-        <div class="shop-hint">选好种子 → 点空地播种 → 熟了点击收获 → 生虫了赶紧点掉</div>
+        <div class="shop-hint">选好种子 → 点空地播种 → 熟了点击收获。双击菜地可批量播种 / 收获，离线时会自动补种并扣除种子成本。</div>
       </div>
       <div class="panel" style="flex:1;">
         <div class="panel-title"><b>成就</b><span class="cnt" id="achCount">0/9</span></div>
@@ -349,6 +350,21 @@
       if(!state.ach) state.ach = {};
       if(!state.weather) state.weather = base.weather;
       if(!state.selected || !CROP_MAP[state.selected]) state.selected = 'radish';
+      state.gold = Math.max(0, Number(state.gold) || 0);
+      state.level = Math.max(1, Math.min(MAX_LEVEL, Math.floor(Number(state.level) || 1)));
+      state.xp = Math.max(0, Number(state.xp) || 0);
+      state.stats.harvested = Math.max(0, Number(state.stats.harvested) || 0);
+      state.stats.earned = Math.max(0, Number(state.stats.earned) || 0);
+      if(!state.stats.cropTypes || typeof state.stats.cropTypes !== 'object') state.stats.cropTypes = {};
+      state.plots.forEach(function(p, i){
+        if(!p || typeof p !== 'object') state.plots[i] = base.plots[i];
+        else{
+          p.locked = PLOT_UNLOCK[i] > state.level;
+          if(p.crop !== null && !CROP_MAP[p.crop]){ p.crop = null; p.growth = 0; }
+          p.growth = Math.max(0, Number(p.growth) || 0);
+          p.pest = Boolean(p.pest);
+        }
+      });
       return true;
     }catch(e){ return false; }
   }
@@ -400,14 +416,16 @@
       var cycles = Math.floor(total / crop.time);
       var rem = total - cycles * crop.time;
       if(cycles > 0){
-        earnedGold += crop.sell * cycles;
+        var gross = crop.sell * cycles;
+        var seedCost = crop.cost * cycles;
+        earnedGold += gross - seedCost;
         earnedXp += crop.xp * cycles;
         harvestedCount += cycles;
         state.stats.harvested += cycles;
-        state.stats.earned += crop.sell * cycles;
+        state.stats.earned += gross;
         state.stats.cropTypes[crop.id] = (state.stats.cropTypes[crop.id] || 0) + cycles;
       }
-      p.growth = rem;
+      p.growth = Math.min(crop.time, rem);
       p.pest = false;
     });
     if(earnedGold > 0){
@@ -473,6 +491,24 @@
     var crop = CROP_MAP[p.crop];
     if(p.growth >= crop.time){ harvest(idx); return; }
     toast(crop.name + ' 生长中 ' + Math.floor(p.growth / crop.time * 100) + '%', 'info');
+  }
+
+  function batchAction(){
+    var harvested = 0, planted = 0, cleared = 0;
+    state.plots.forEach(function(p, i){
+      if(p.locked) return;
+      if(p.pest){ removePest(i); cleared++; return; }
+      if(p.crop !== null && p.growth >= CROP_MAP[p.crop].time){ harvest(i); harvested++; }
+    });
+    state.plots.forEach(function(p, i){
+      if(p.locked || p.crop !== null) return;
+      var crop = CROP_MAP[state.selected];
+      if(crop && cropUnlocked(crop) && state.gold >= crop.cost){ plant(i); planted++; }
+    });
+    if(harvested || planted || cleared){
+      toast('批量完成：收获 '+harvested+'，播种 '+planted+'，除虫 '+cleared, 'gold');
+      save();
+    }
   }
 
   /* ============ 天气 ============ */
@@ -1105,6 +1141,15 @@
     var p = canvasCoord(e);
     var idx = plotAt(p.x, p.y);
     if(idx >= 0) clickPlot(idx);
+  });
+  cv.addEventListener('dblclick', function(e){
+    e.preventDefault();
+    audio.ensure();
+    batchAction();
+  });
+  $('batchBtn').addEventListener('click', function(){
+    audio.ensure();
+    batchAction();
   });
   // 移动端触摸
   cv.addEventListener('touchstart', function(e){
