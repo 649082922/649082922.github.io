@@ -50,8 +50,8 @@ export const navBarConfig: NavBarConfig = {
 			url: "/games/", // 种菜等小游戏
 		},
 		{
-			name: "OBCP 刷题",
-			url: "/quiz/", // 刷题 654 题
+			name: "题库",
+			url: "/#quiz-library", // 先选题库，再进入答题
 		},
 		LinkPreset.About,
 		{
