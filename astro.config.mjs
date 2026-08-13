@@ -100,7 +100,9 @@ export default defineConfig({
 			}
 		}),
         svelte(),
-		sitemap(),
+		sitemap({
+			filter: (page) => !page.includes("/owner/"),
+		}),
 	],
 	markdown: {
 		remarkPlugins: [

@@ -1,11 +1,13 @@
 ---
+import GameCloudPanel from "@/components/GameCloudPanel.astro";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 ---
 <MainGridLayout title="小游戏" description="小游戏 - 休息一下，摸鱼专用">
 	<div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
 		<div class="card-base z-10 px-9 py-6 relative w-full">
 			<h1 class="text-3xl font-bold text-[var(--primary)] mb-2">小游戏 🎮</h1>
-			<p class="mb-4 opacity-75">摸鱼专用，存档存本地浏览器，关页面也不丢。</p>
+			<p class="mb-4 text-75">摸鱼专用，本地自动存档；登录后可以跨设备保存和恢复。</p>
+			<GameCloudPanel />
 			<div class="flex gap-2 mb-3 flex-wrap">
 				<button onclick="document.getElementById('gameFrame').src='/games/farm.html'" class="btn-regular rounded-lg px-4 py-2 font-bold">🌱 种菜</button>
 				<button onclick="document.getElementById('gameFrame').src='/games/xiuxian.html'" class="btn-regular rounded-lg px-4 py-2 font-bold">⚡ 放置修仙</button>

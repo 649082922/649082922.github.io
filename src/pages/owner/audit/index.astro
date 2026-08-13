@@ -1,0 +1,133 @@
+---
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+---
+
+<MainGridLayout title="访问审计" description="仅站长可访问的登录与云存档审计日志">
+	<meta slot="head" name="robots" content="noindex, nofollow, noarchive" />
+	<section class="audit-page card-base onload-animation">
+		<header>
+			<p>OWNER CONSOLE</p>
+			<h1>登录与云存档审计</h1>
+			<span>仅记录登录用户的登录、退出、上传与恢复事件。匿名访问不追踪。</span>
+		</header>
+
+		<div class="audit-state" id="audit-state">正在检查站长权限…</div>
+		<div class="audit-login" id="audit-login" hidden>
+			<p>请使用已加入 <code>site_admins</code> 的站长账号登录。</p>
+			<a href="/games/">前往小游戏登录 →</a>
+		</div>
+
+		<div class="audit-content" id="audit-content" hidden>
+			<div class="audit-toolbar">
+				<strong id="audit-count">0 条记录</strong>
+				<button id="refresh-audit" type="button">刷新</button>
+			</div>
+			<div class="table-wrap">
+				<table>
+					<thead><tr><th>时间</th><th>用户</th><th>事件</th><th>页面</th><th>详情</th></tr></thead>
+					<tbody id="audit-rows"></tbody>
+				</table>
+			</div>
+		</div>
+	</section>
+</MainGridLayout>
+
+<style>
+	.audit-page {
+		--audit-text: #302a2e;
+		--audit-muted: #746a72;
+		--audit-line: rgba(48, 42, 46, 0.14);
+		padding: clamp(1.2rem, 3vw, 2rem);
+		color: var(--audit-text);
+	}
+	:global(.dark) .audit-page {
+		--audit-text: #f4edf5;
+		--audit-muted: #c9bdcc;
+		--audit-line: rgba(255, 244, 255, 0.15);
+	}
+	header > p { margin: 0 0 0.6rem; color: var(--primary); font: 800 0.68rem/1 ui-monospace, monospace; letter-spacing: 0.14em; }
+	header h1 { margin: 0; color: var(--audit-text); font-size: clamp(1.7rem, 4vw, 2.6rem); }
+	header span { display: block; margin-top: 0.7rem; color: var(--audit-muted); font-size: 0.82rem; }
+	.audit-state, .audit-login { margin-top: 1.4rem; padding: 1rem; border: 1px solid var(--audit-line); border-radius: 0.75rem; color: var(--audit-muted); }
+	.audit-login[hidden], .audit-content[hidden] { display: none; }
+	.audit-login a { color: var(--primary); font-weight: 750; }
+	.audit-content { margin-top: 1.4rem; }
+	.audit-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.7rem; }
+	.audit-toolbar strong { color: var(--audit-text); }
+	.audit-toolbar button { padding: 0.5rem 0.8rem; border: 1px solid var(--audit-line); border-radius: 0.55rem; background: transparent; color: var(--audit-text); cursor: pointer; }
+	.table-wrap { overflow-x: auto; border: 1px solid var(--audit-line); border-radius: 0.75rem; }
+	table { width: 100%; min-width: 46rem; border-collapse: collapse; color: var(--audit-text); font-size: 0.76rem; }
+	th, td { padding: 0.8rem; border-bottom: 1px solid var(--audit-line); text-align: left; vertical-align: top; }
+	th { color: var(--audit-muted); font-size: 0.68rem; letter-spacing: 0.05em; }
+	td:last-child { max-width: 22rem; word-break: break-word; color: var(--audit-muted); }
+	.event-badge { display: inline-flex; padding: 0.22rem 0.45rem; border-radius: 0.35rem; background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); font-weight: 800; }
+</style>
+
+<script>
+	import { isCloudConfigured, supabase } from "@/lib/game-cloud";
+
+	type AuditRow = {
+		id: number;
+		created_at: string;
+		event_type: string;
+		page_path: string;
+		metadata: Record<string, unknown>;
+		actor_email: string | null;
+	};
+
+	const state = document.getElementById("audit-state");
+	const login = document.getElementById("audit-login");
+	const content = document.getElementById("audit-content");
+	const rows = document.getElementById("audit-rows");
+	const count = document.getElementById("audit-count");
+
+	function showState(message: string) { if (state) state.textContent = message; }
+	function escapeHtml(value: unknown) {
+		return String(value ?? "").replace(/[&<>'"]/g, (character) => ({
+			"&": "&amp;", "<": "&lt;", ">": "&gt;", "'": "&#39;", '"': "&quot;",
+		})[character] ?? character);
+	}
+
+	async function loadAudit() {
+		if (!supabase) return;
+		showState("正在读取审计日志…");
+		const { data, error } = await supabase
+			.from("site_audit_logs")
+			.select("id, created_at, event_type, page_path, metadata, actor_email")
+			.order("created_at", { ascending: false })
+			.limit(200);
+		if (error) return showState(`读取失败：${error.message}`);
+		const logs = (data ?? []) as AuditRow[];
+		if (rows) rows.innerHTML = logs.map((row) => `
+			<tr>
+				<td>${escapeHtml(new Date(row.created_at).toLocaleString())}</td>
+				<td>${escapeHtml(row.actor_email ?? row.metadata.provider ?? "未知")}</td>
+				<td><span class="event-badge">${escapeHtml(row.event_type)}</span></td>
+				<td>${escapeHtml(row.page_path)}</td>
+				<td>${escapeHtml(JSON.stringify(row.metadata))}</td>
+			</tr>`).join("");
+		if (count) count.textContent = `${logs.length} 条记录`;
+		if (state) state.hidden = true;
+		if (content) content.hidden = false;
+	}
+
+	if (!isCloudConfigured || !supabase) {
+		showState("审计服务尚未配置。 ");
+	} else {
+		const { data: userData } = await supabase.auth.getUser();
+		if (!userData.user) {
+			showState("需要先登录站长账号。 ");
+			if (login) login.hidden = false;
+		} else {
+			const { data: admin } = await supabase
+				.from("site_admins")
+				.select("user_id")
+				.eq("user_id", userData.user.id)
+				.maybeSingle();
+			if (!admin) showState("当前账号没有站长权限。 ");
+			else await loadAudit();
+		}
+	}
+
+	document.getElementById("refresh-audit")?.addEventListener("click", loadAudit);
+</script>

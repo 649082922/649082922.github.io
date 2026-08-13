@@ -1,0 +1,214 @@
+<section class="cloud-panel" aria-labelledby="cloud-title">
+	<div class="cloud-copy">
+		<p class="cloud-kicker">CLOUD SAVE</p>
+		<h2 id="cloud-title">登录后长期保存游戏进度</h2>
+		<p id="cloud-description">本地存档仍然保留；登录后可以手动上传到云端，并在其他设备恢复。</p>
+	</div>
+
+	<div class="cloud-actions" id="cloud-actions">
+		<button class="cloud-button github" id="login-github" type="button">GitHub 登录</button>
+		<form class="email-form" id="email-form">
+			<label class="sr-only" for="login-email">邮箱地址</label>
+			<input id="login-email" type="email" autocomplete="email" placeholder="输入邮箱获取登录链接" required />
+			<button class="cloud-button secondary" type="submit">邮箱登录</button>
+		</form>
+	</div>
+
+	<div class="user-panel" id="user-panel" hidden>
+		<div>
+			<span>已登录</span>
+			<strong id="user-identity"></strong>
+		</div>
+		<div class="user-actions">
+			<button class="cloud-button primary" id="upload-save" type="button">上传当前存档</button>
+			<button class="cloud-button secondary" id="restore-save" type="button">恢复云端存档</button>
+			<button class="text-button" id="logout" type="button">退出登录</button>
+		</div>
+	</div>
+
+	<p class="cloud-status" id="cloud-status" aria-live="polite"></p>
+	<p class="privacy-note">登录后会记录登录、存档上传和恢复事件，仅供站长安全审计；不记录游戏操作内容。</p>
+</section>
+
+<style>
+	.cloud-panel {
+		--cloud-text: #302a2e;
+		--cloud-muted: #746a72;
+		--cloud-line: rgba(48, 42, 46, 0.14);
+		margin-bottom: 1rem;
+		padding: clamp(1rem, 2.2vw, 1.4rem);
+		border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
+		border-radius: 1rem;
+		background: color-mix(in srgb, var(--primary) 4%, var(--card-bg));
+		color: var(--cloud-text);
+	}
+	:global(.dark) .cloud-panel {
+		--cloud-text: #f4edf5;
+		--cloud-muted: #c9bdcc;
+		--cloud-line: rgba(255, 244, 255, 0.15);
+	}
+	.cloud-kicker {
+		margin: 0 0 0.4rem;
+		font: 800 0.68rem/1 ui-monospace, SFMono-Regular, Consolas, monospace;
+		letter-spacing: 0.14em;
+		color: var(--primary);
+	}
+	.cloud-copy h2 { margin: 0; font-size: 1.15rem; color: var(--cloud-text); }
+	.cloud-copy > p:last-child { margin: 0.45rem 0 0; color: var(--cloud-muted); font-size: 0.82rem; }
+	.cloud-actions { display: flex; gap: 0.6rem; margin-top: 1rem; flex-wrap: wrap; }
+	.cloud-actions[hidden] { display: none; }
+	.email-form { display: flex; flex: 1 1 22rem; gap: 0.5rem; }
+	.email-form input {
+		min-width: 10rem;
+		flex: 1;
+		padding: 0 0.85rem;
+		border: 1px solid var(--cloud-line);
+		border-radius: 0.65rem;
+		background: color-mix(in srgb, var(--card-bg) 88%, transparent);
+		color: var(--cloud-text);
+	}
+	.email-form input::placeholder { color: var(--cloud-muted); opacity: 0.8; }
+	.cloud-button {
+		min-height: 2.7rem;
+		padding: 0 1rem;
+		border: 1px solid var(--cloud-line);
+		border-radius: 0.65rem;
+		font-size: 0.78rem;
+		font-weight: 750;
+		cursor: pointer;
+		color: var(--cloud-text);
+		background: transparent;
+	}
+	.cloud-button.github { background: #24292f; border-color: #24292f; color: #fff; }
+	.cloud-button.primary { background: var(--primary); border-color: var(--primary); color: #fff; }
+	.cloud-button.secondary:hover { border-color: var(--primary); color: var(--primary); }
+	.cloud-button:disabled { cursor: wait; opacity: 0.55; }
+	.user-panel {
+		margin-top: 1rem;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding-top: 1rem;
+		border-top: 1px solid var(--cloud-line);
+	}
+	.user-panel[hidden] { display: none; }
+	.user-panel span { display: block; font-size: 0.7rem; color: var(--cloud-muted); }
+	.user-panel strong { display: block; margin-top: 0.2rem; color: var(--cloud-text); }
+	.user-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end; }
+	.text-button { border: 0; background: transparent; color: var(--cloud-muted); cursor: pointer; font-size: 0.76rem; }
+	.cloud-status { min-height: 1.3em; margin: 0.7rem 0 0; font-size: 0.76rem; color: var(--primary); }
+	.privacy-note { margin: 0.4rem 0 0; font-size: 0.68rem; line-height: 1.5; color: var(--cloud-muted); }
+	@media (max-width: 640px) {
+		.email-form { flex-direction: column; }
+		.email-form input { min-height: 2.7rem; }
+		.user-panel { align-items: flex-start; flex-direction: column; }
+		.user-actions { width: 100%; justify-content: flex-start; }
+		.cloud-button { flex: 1; }
+	}
+</style>
+
+<script>
+	import {
+		isCloudConfigured,
+		restoreCloudSave,
+		supabase,
+		uploadCloudSave,
+		writeAudit,
+	} from "@/lib/game-cloud";
+	import type { User } from "@supabase/supabase-js";
+
+	const actions = document.getElementById("cloud-actions");
+	const userPanel = document.getElementById("user-panel");
+	const identity = document.getElementById("user-identity");
+	const status = document.getElementById("cloud-status");
+	const description = document.getElementById("cloud-description");
+	let currentUser: User | null = null;
+
+	function setStatus(message: string, isError = false) {
+		if (!status) return;
+		status.textContent = message;
+		status.style.color = isError ? "#d95b65" : "var(--primary)";
+	}
+
+	function renderUser(user: User | null) {
+		currentUser = user;
+		if (actions) actions.hidden = Boolean(user);
+		if (userPanel) userPanel.hidden = !user;
+		if (identity) identity.textContent = user?.email ?? user?.user_metadata?.user_name ?? "已登录用户";
+	}
+
+	if (!isCloudConfigured || !supabase) {
+		if (description) description.textContent = "云存档正在等待站长完成服务配置，本地自动存档仍然正常。";
+		if (actions) actions.hidden = true;
+		setStatus("当前仅使用浏览器本地存档。");
+	} else {
+		const { data } = await supabase.auth.getUser();
+		renderUser(data.user);
+		supabase.auth.onAuthStateChange((event, session) => {
+			renderUser(session?.user ?? null);
+			if (event === "SIGNED_IN" && session?.user) {
+				setStatus("登录成功，可以上传或恢复云端存档。 ");
+				if (!sessionStorage.getItem("game-login-audited")) {
+					sessionStorage.setItem("game-login-audited", "1");
+					void writeAudit(session.user, "login");
+				}
+			}
+		});
+	}
+
+	document.getElementById("login-github")?.addEventListener("click", async () => {
+		if (!supabase) return;
+		setStatus("正在跳转到 GitHub…");
+		const { error } = await supabase.auth.signInWithOAuth({
+			provider: "github",
+			options: { redirectTo: `${window.location.origin}/games/` },
+		});
+		if (error) setStatus(`登录失败：${error.message}`, true);
+	});
+
+	document.getElementById("email-form")?.addEventListener("submit", async (event) => {
+		event.preventDefault();
+		if (!supabase) return;
+		const input = document.getElementById("login-email") as HTMLInputElement | null;
+		if (!input?.value) return;
+		setStatus("正在发送登录邮件…");
+		const { error } = await supabase.auth.signInWithOtp({
+			email: input.value,
+			options: { emailRedirectTo: `${window.location.origin}/games/` },
+		});
+		setStatus(error ? `发送失败：${error.message}` : "登录链接已发送，请查看邮箱。", Boolean(error));
+	});
+
+	document.getElementById("upload-save")?.addEventListener("click", async () => {
+		if (!currentUser) return;
+		try {
+			setStatus("正在上传存档…");
+			const count = await uploadCloudSave(currentUser);
+			setStatus(count ? `已上传 ${count} 个游戏的存档。` : "没有找到可上传的本地存档。");
+		} catch (error) {
+			setStatus(`上传失败：${error instanceof Error ? error.message : "未知错误"}`, true);
+		}
+	});
+
+	document.getElementById("restore-save")?.addEventListener("click", async () => {
+		if (!currentUser) return;
+		try {
+			setStatus("正在恢复云端存档…");
+			const { restored, updatedAt } = await restoreCloudSave(currentUser);
+			if (!restored) return setStatus("云端还没有存档。 ");
+			setStatus(`已恢复 ${restored} 个游戏存档（${new Date(updatedAt!).toLocaleString()}），重新进入游戏后生效。`);
+			const frame = document.getElementById("gameFrame") as HTMLIFrameElement | null;
+			if (frame) frame.src = frame.src;
+		} catch (error) {
+			setStatus(`恢复失败：${error instanceof Error ? error.message : "未知错误"}`, true);
+		}
+	});
+
+	document.getElementById("logout")?.addEventListener("click", async () => {
+		if (!supabase || !currentUser) return;
+		await writeAudit(currentUser, "logout");
+		await supabase.auth.signOut();
+		setStatus("已退出登录，本地存档不受影响。 ");
+	});
+</script>

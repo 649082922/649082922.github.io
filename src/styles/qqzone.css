@@ -4,6 +4,8 @@
 /* 1) 怀旧暖色渐变背景 —— 浅蓝粉 + 暖奶橙 */
 html:root {
   --page-bg: #fff5f0;
+  --body-text: #302a2e;
+  --body-muted: #746a72;
   background-color: #fff5f0;
   background-image:
     radial-gradient(1200px 800px at 8% -5%, #ffd9e8 0%, transparent 55%),
@@ -14,6 +16,8 @@ html:root {
 }
 html:root.dark {
   --page-bg: #211a26;
+  --body-text: #f4edf5;
+  --body-muted: #c9bdcc;
   background-color: #211a26;
   background-image:
     radial-gradient(1000px 700px at 8% -5%, rgba(150, 80, 130, 0.38) 0%, transparent 55%),
@@ -21,6 +25,30 @@ html:root.dark {
     linear-gradient(160deg, #26203a 0%, #241a2c 50%, #1a2233 100%) !important;
   background-attachment: fixed;
   background-size: cover;
+}
+
+/* 统一正文前景色，避免没有单独声明颜色的页面在暗色卡片上继承黑色。 */
+html:root,
+html:root body {
+  color: var(--body-text);
+}
+
+html:root .card-base,
+html:root .float-panel {
+  color: var(--body-text);
+}
+
+html:root.dark input,
+html:root.dark textarea,
+html:root.dark select {
+  color: var(--body-text);
+  caret-color: var(--body-text);
+}
+
+html:root.dark input::placeholder,
+html:root.dark textarea::placeholder {
+  color: var(--body-muted);
+  opacity: 0.78;
 }
 
 /* 2) 卡片：更圆润 + 粉色柔光阴影 + 毛玻璃半透明 */

@@ -27,6 +27,9 @@ jobs:
       # withastro/action 会自动检测包管理器(pnpm)、安装依赖、构建并上传 Pages 产物
       - name: Build with Astro
         uses: withastro/action@v5
+        env:
+          PUBLIC_SUPABASE_URL: ${{ vars.PUBLIC_SUPABASE_URL }}
+          PUBLIC_SUPABASE_PUBLISHABLE_KEY: ${{ secrets.PUBLIC_SUPABASE_PUBLISHABLE_KEY }}
 
   deploy:
     needs: build
