@@ -138,6 +138,12 @@
 		if (identity) identity.textContent = user?.email ?? user?.user_metadata?.user_name ?? "已登录用户";
 	}
 
+	function auditLoginOnce(user: User) {
+		if (sessionStorage.getItem("game-login-audited")) return;
+		sessionStorage.setItem("game-login-audited", "1");
+		void writeAudit(user, "login");
+	}
+
 	if (!isCloudConfigured || !supabase) {
 		if (description) description.textContent = "云存档正在等待站长完成服务配置，本地自动存档仍然正常。";
 		if (actions) actions.hidden = true;
@@ -145,14 +151,12 @@
 	} else {
 		const { data } = await supabase.auth.getUser();
 		renderUser(data.user);
+		if (data.user) auditLoginOnce(data.user);
 		supabase.auth.onAuthStateChange((event, session) => {
 			renderUser(session?.user ?? null);
 			if (event === "SIGNED_IN" && session?.user) {
 				setStatus("登录成功，可以上传或恢复云端存档。 ");
-				if (!sessionStorage.getItem("game-login-audited")) {
-					sessionStorage.setItem("game-login-audited", "1");
-					void writeAudit(session.user, "login");
-				}
+				auditLoginOnce(session.user);
 			}
 		});
 	}
