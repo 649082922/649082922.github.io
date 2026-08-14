@@ -7,11 +7,6 @@
 
 	<div class="cloud-actions" id="cloud-actions">
 		<button class="cloud-button github" id="login-github" type="button">GitHub 登录</button>
-		<form class="email-form" id="email-form">
-			<label class="sr-only" for="login-email">邮箱地址</label>
-			<input id="login-email" type="email" autocomplete="email" placeholder="输入邮箱获取登录链接" required />
-			<button class="cloud-button secondary" type="submit">邮箱登录</button>
-		</form>
 	</div>
 
 	<div class="user-panel" id="user-panel" hidden>
@@ -57,17 +52,6 @@
 	.cloud-copy > p:last-child { margin: 0.45rem 0 0; color: var(--cloud-muted); font-size: 0.82rem; }
 	.cloud-actions { display: flex; gap: 0.6rem; margin-top: 1rem; flex-wrap: wrap; }
 	.cloud-actions[hidden] { display: none; }
-	.email-form { display: flex; flex: 1 1 22rem; gap: 0.5rem; }
-	.email-form input {
-		min-width: 10rem;
-		flex: 1;
-		padding: 0 0.85rem;
-		border: 1px solid var(--cloud-line);
-		border-radius: 0.65rem;
-		background: color-mix(in srgb, var(--card-bg) 88%, transparent);
-		color: var(--cloud-text);
-	}
-	.email-form input::placeholder { color: var(--cloud-muted); opacity: 0.8; }
 	.cloud-button {
 		min-height: 2.7rem;
 		padding: 0 1rem;
@@ -100,8 +84,6 @@
 	.cloud-status { min-height: 1.3em; margin: 0.7rem 0 0; font-size: 0.76rem; color: var(--primary); }
 	.privacy-note { margin: 0.4rem 0 0; font-size: 0.68rem; line-height: 1.5; color: var(--cloud-muted); }
 	@media (max-width: 640px) {
-		.email-form { flex-direction: column; }
-		.email-form input { min-height: 2.7rem; }
 		.user-panel { align-items: flex-start; flex-direction: column; }
 		.user-actions { width: 100%; justify-content: flex-start; }
 		.cloud-button { flex: 1; }
@@ -169,19 +151,6 @@
 			options: { redirectTo: `${window.location.origin}/games/` },
 		});
 		if (error) setStatus(`登录失败：${error.message}`, true);
-	});
-
-	document.getElementById("email-form")?.addEventListener("submit", async (event) => {
-		event.preventDefault();
-		if (!supabase) return;
-		const input = document.getElementById("login-email") as HTMLInputElement | null;
-		if (!input?.value) return;
-		setStatus("正在发送登录邮件…");
-		const { error } = await supabase.auth.signInWithOtp({
-			email: input.value,
-			options: { emailRedirectTo: `${window.location.origin}/games/` },
-		});
-		setStatus(error ? `发送失败：${error.message}` : "登录链接已发送，请查看邮箱。", Boolean(error));
 	});
 
 	document.getElementById("upload-save")?.addEventListener("click", async () => {
