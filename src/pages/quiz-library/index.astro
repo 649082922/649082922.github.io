@@ -7,8 +7,23 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		<header class="page-head">
 			<p>QUESTION LIBRARY</p>
 			<h1>上传题库，直接开始答题</h1>
-			<span>不用逐题录入。选择 Excel 或 JSON 文件，网站会自动识别题型、题目、选项和答案；文件只在当前浏览器中处理。</span>
+			<span>不用逐题录入。选择 Excel 或 JSON 文件，网站会自动识别题型、题目、选项和答案；文件在本地解析，登录后题库结果会同步到云端。</span>
 		</header>
+
+		<section class="cloud-sync" id="quiz-cloud-sync">
+			<div>
+				<span class="bank-tag">跨设备同步</span>
+				<strong id="quiz-cloud-user">尚未登录</strong>
+				<small id="quiz-cloud-description">登录 GitHub 后，上传的题库会保存到云端，并在其他设备自动恢复。</small>
+			</div>
+			<div class="cloud-actions">
+				<button class="github-action" id="quiz-login-github" type="button">GitHub 登录</button>
+				<button id="quiz-upload-cloud" type="button" hidden>同步当前题库</button>
+				<button id="quiz-download-cloud" type="button" hidden>从云端恢复</button>
+				<button id="quiz-logout" type="button" hidden>退出登录</button>
+			</div>
+			<p id="quiz-cloud-status" aria-live="polite"></p>
+		</section>
 
 		<div class="library-grid">
 			<section class="bank-card current" id="current-bank-card" hidden>
@@ -69,6 +84,15 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 	.page-head p { margin: 0 0 .8rem; color: var(--primary); font: 800 .72rem/1 ui-monospace, Consolas, monospace; letter-spacing: .14em; }
 	.page-head h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 1.08; letter-spacing: -.05em; color: var(--library-text); }
 	.page-head > span { display: block; margin-top: 1rem; font-size: .95rem; line-height: 1.75; color: var(--library-muted); }
+	.cloud-sync { margin-top: 1.25rem; padding: 1rem 1.1rem; border: 1px solid var(--library-line); border-radius: .85rem; background: color-mix(in srgb, var(--primary) 4%, transparent); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .8rem 1rem; align-items: center; }
+	.cloud-sync > div:first-child { min-width: 0; }
+	.cloud-sync strong { display: block; margin-top: .7rem; color: var(--library-text); font-size: .92rem; }
+	.cloud-sync small { display: block; margin-top: .28rem; color: var(--library-muted); font-size: .76rem; line-height: 1.55; }
+	.cloud-actions { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: .55rem; }
+	.cloud-actions button { padding: .62rem .78rem; border: 1px solid var(--library-line); border-radius: .55rem; background: transparent; color: var(--library-text); cursor: pointer; font-family: inherit; font-size: .74rem; font-weight: 750; }
+	.cloud-actions button:hover { border-color: var(--primary); }
+	.cloud-actions .github-action { border-color: #24292f; background: #24292f; color: #fff; }
+	#quiz-cloud-status { grid-column: 1 / -1; min-height: 1.2em; margin: 0; color: var(--primary); font-size: .74rem; }
 	.library-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: clamp(.8rem, 1.6vw, 1.2rem); margin-top: clamp(1.6rem, 3vw, 2.4rem); }
 	.bank-card { min-height: 15rem; padding: clamp(1.2rem, 2.2vw, 1.8rem); border: 1px solid var(--library-line); border-radius: 1rem; background: color-mix(in srgb, var(--card-bg) 94%, var(--primary)); color: var(--library-text); text-align: left; cursor: pointer; display: flex; flex-direction: column; font: inherit; transition: transform 160ms ease, border-color 160ms ease, background 160ms ease; }
 	:global(.dark) .bank-card { background: rgba(55, 45, 64, 0.94); }
@@ -100,6 +124,8 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 	.upload-status { min-height: 1.3em; margin: .8rem 0 0; font-size: .8rem; line-height: 1.6; color: var(--primary); }
 	@media (max-width: 720px) {
 		.library-page { padding: 1.1rem; border-radius: 1rem; }
+		.cloud-sync { grid-template-columns: 1fr; }
+		.cloud-actions { justify-content: flex-start; }
 		.bank-card { min-height: 12rem; }
 		.format-note { grid-template-columns: 1fr; }
 		.example-row { grid-template-columns: auto 1fr auto; }
@@ -113,14 +139,15 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 
 <script>
 	import * as XLSX from "xlsx";
-
-	type QuizType = "single" | "multiple" | "judge";
-	type QuizQuestion = { q: string; options: string[]; answer: string };
-	type QuizBank = Record<QuizType, QuizQuestion[]>;
+	import { isCloudConfigured, supabase, writeAudit } from "@/lib/game-cloud";
+	import { deleteQuizBank, downloadQuizBank, uploadQuizBank } from "@/lib/quiz-cloud";
+	import type { QuizBank, QuizType } from "@/lib/quiz-cloud";
+	import type { User } from "@supabase/supabase-js";
 
 	const BANK_KEY = "quiz-current-bank";
 	const NAME_KEY = "quiz-current-bank-name";
 	const ID_KEY = "quiz-current-bank-id";
+	const UPDATED_KEY = "quiz-current-bank-updated-at";
 	const TYPES: QuizType[] = ["single", "multiple", "judge"];
 	const emptyBank = (): QuizBank => ({ single: [], multiple: [], judge: [] });
 	const byId = <T extends HTMLElement>(id: string) => document.getElementById(id) as T | null;
@@ -128,6 +155,14 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 	const status = byId<HTMLElement>("upload-status");
 	const progress = byId<HTMLElement>("upload-progress");
 	const progressLabel = byId<HTMLElement>("progress-label");
+	const cloudUser = byId<HTMLElement>("quiz-cloud-user");
+	const cloudDescription = byId<HTMLElement>("quiz-cloud-description");
+	const cloudStatus = byId<HTMLElement>("quiz-cloud-status");
+	const loginButton = byId<HTMLButtonElement>("quiz-login-github");
+	const uploadCloudButton = byId<HTMLButtonElement>("quiz-upload-cloud");
+	const downloadCloudButton = byId<HTMLButtonElement>("quiz-download-cloud");
+	const logoutButton = byId<HTMLButtonElement>("quiz-logout");
+	let currentUser: User | null = null;
 
 	function totalOf(bank: QuizBank) { return TYPES.reduce((sum, type) => sum + bank[type].length, 0); }
 	function makeId() { return globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${Math.random().toString(36).slice(2)}`; }
@@ -231,6 +266,59 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		catch { return null; }
 	}
 
+	function setCloudStatus(message: string, isError = false) {
+		if (!cloudStatus) return;
+		cloudStatus.textContent = message;
+		cloudStatus.style.color = isError ? "#ff8790" : "var(--primary)";
+	}
+
+	function saveLocalBank(bank: QuizBank, name: string, updatedAt: string, newId = false) {
+		localStorage.setItem(BANK_KEY, JSON.stringify(bank));
+		localStorage.setItem(NAME_KEY, name || "我的题库");
+		localStorage.setItem(UPDATED_KEY, updatedAt);
+		if (newId || !localStorage.getItem(ID_KEY)) localStorage.setItem(ID_KEY, makeId());
+		renderCurrent();
+	}
+
+	function renderCloudUser(user: User | null) {
+		currentUser = user;
+		const identity = user?.user_metadata?.user_name ?? user?.user_metadata?.preferred_username ?? user?.email ?? "已登录用户";
+		if (cloudUser) cloudUser.textContent = user ? `${identity} · 云同步已开启` : "尚未登录";
+		if (cloudDescription) cloudDescription.textContent = user
+			? "上传题库后会自动同步；其他设备登录同一账号即可恢复。"
+			: "登录 GitHub 后，上传的题库会保存到云端，并在其他设备自动恢复。";
+		if (loginButton) loginButton.hidden = Boolean(user);
+		if (uploadCloudButton) uploadCloudButton.hidden = !user;
+		if (downloadCloudButton) downloadCloudButton.hidden = !user;
+		if (logoutButton) logoutButton.hidden = !user;
+	}
+
+	async function restoreNewerCloudBank(user: User, force = false) {
+		const cloud = await downloadQuizBank(user);
+		if (!cloud) {
+			const localBank = loadCurrent();
+			if (!localBank || !totalOf(localBank)) {
+				setCloudStatus("云端还没有题库；上传文件后会自动同步。 ");
+				return false;
+			}
+			const localName = localStorage.getItem(NAME_KEY) || "我的题库";
+			const localUpdatedAt = localStorage.getItem(UPDATED_KEY) || new Date().toISOString();
+			await uploadQuizBank(user, localName, localBank, localUpdatedAt);
+			localStorage.setItem(UPDATED_KEY, localUpdatedAt);
+			setCloudStatus(`已自动把“${localName}”同步到云端。`);
+			return true;
+		}
+		const localUpdatedAt = localStorage.getItem(UPDATED_KEY);
+		const localExists = Boolean(loadCurrent());
+		if (!force && localExists && localUpdatedAt && Date.parse(localUpdatedAt) >= Date.parse(cloud.updatedAt)) {
+			setCloudStatus(`当前设备已是最新版本（${new Date(cloud.updatedAt).toLocaleString()}）。`);
+			return false;
+		}
+		saveLocalBank(cloud.bank, cloud.name, cloud.updatedAt, !localExists);
+		setCloudStatus(`已从云端恢复“${cloud.name}”（${new Date(cloud.updatedAt).toLocaleString()}）。`);
+		return true;
+	}
+
 	function renderCurrent() {
 		const bank = loadCurrent();
 		const card = byId<HTMLElement>("current-bank-card");
@@ -242,12 +330,16 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		if (summary) summary.textContent = `${totalOf(bank)} 题 · 单选 ${bank.single.length} · 多选 ${bank.multiple.length} · 判断 ${bank.judge.length}`;
 	}
 
-	byId<HTMLButtonElement>("clear-bank")?.addEventListener("click", () => {
+	byId<HTMLButtonElement>("clear-bank")?.addEventListener("click", async () => {
 		if (!window.confirm("确定清空当前题库和它的本地答题记录吗？")) return;
 		const bankId = localStorage.getItem(ID_KEY);
-		localStorage.removeItem(BANK_KEY); localStorage.removeItem(NAME_KEY); localStorage.removeItem(ID_KEY);
+		localStorage.removeItem(BANK_KEY); localStorage.removeItem(NAME_KEY); localStorage.removeItem(ID_KEY); localStorage.removeItem(UPDATED_KEY);
 		if (bankId) Object.keys(localStorage).filter((key) => key.startsWith(`quiz-bank-${bankId}-`)).forEach((key) => localStorage.removeItem(key));
 		renderCurrent();
+		if (currentUser) {
+			try { await deleteQuizBank(currentUser); setCloudStatus("本地和云端题库均已清空。 "); }
+			catch (error) { setCloudStatus(`本地已清空，但云端删除失败：${error instanceof Error ? error.message : "未知错误"}`, true); }
+		}
 	});
 
 	fileInput?.addEventListener("change", async () => {
@@ -262,9 +354,14 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 			const bank = await readBank(file);
 			const total = totalOf(bank);
 			if (!total) throw new Error("没有读取到有效题目");
-			localStorage.setItem(BANK_KEY, JSON.stringify(bank));
-			localStorage.setItem(NAME_KEY, file.name.replace(/\.(xlsx?|json)$/i, "") || "我的题库");
-			localStorage.setItem(ID_KEY, makeId());
+			const bankName = file.name.replace(/\.(xlsx?|json)$/i, "") || "我的题库";
+			const updatedAt = new Date().toISOString();
+			saveLocalBank(bank, bankName, updatedAt, true);
+			if (currentUser) {
+				if (status) status.textContent = `识别成功：共 ${total} 题，正在同步到云端…`;
+				await uploadQuizBank(currentUser, bankName, bank, updatedAt);
+				setCloudStatus(`“${bankName}”已同步到云端。`);
+			}
 			if (status) status.textContent = `识别成功：共 ${total} 题（单选 ${bank.single.length}、多选 ${bank.multiple.length}、判断 ${bank.judge.length}），正在进入答题…`;
 			if (progress) progress.hidden = true;
 			window.setTimeout(() => { window.location.href = "/quiz/"; }, 500);
@@ -275,5 +372,63 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		}
 	});
 
+	loginButton?.addEventListener("click", async () => {
+		if (!supabase) return;
+		setCloudStatus("正在跳转到 GitHub 登录…");
+		const { error } = await supabase.auth.signInWithOAuth({
+			provider: "github",
+			options: { redirectTo: `${window.location.origin}/quiz-library/` },
+		});
+		if (error) setCloudStatus(`登录失败：${error.message}`, true);
+	});
+
+	uploadCloudButton?.addEventListener("click", async () => {
+		if (!currentUser) return;
+		const bank = loadCurrent();
+		if (!bank || !totalOf(bank)) return setCloudStatus("当前设备还没有可同步的题库。", true);
+		try {
+			setCloudStatus("正在同步当前题库…");
+			const name = localStorage.getItem(NAME_KEY) || "我的题库";
+			const updatedAt = new Date().toISOString();
+			await uploadQuizBank(currentUser, name, bank, updatedAt);
+			localStorage.setItem(UPDATED_KEY, updatedAt);
+			setCloudStatus(`“${name}”已同步到云端。`);
+		} catch (error) { setCloudStatus(`同步失败：${error instanceof Error ? error.message : "未知错误"}`, true); }
+	});
+
+	downloadCloudButton?.addEventListener("click", async () => {
+		if (!currentUser) return;
+		try { setCloudStatus("正在读取云端题库…"); await restoreNewerCloudBank(currentUser, true); }
+		catch (error) { setCloudStatus(`恢复失败：${error instanceof Error ? error.message : "未知错误"}`, true); }
+	});
+
+	logoutButton?.addEventListener("click", async () => {
+		if (!supabase || !currentUser) return;
+		await writeAudit(currentUser, "logout");
+		await supabase.auth.signOut();
+		renderCloudUser(null);
+		setCloudStatus("已退出登录，本地题库不受影响。 ");
+	});
+
 	renderCurrent();
+	if (!isCloudConfigured || !supabase) {
+		if (cloudDescription) cloudDescription.textContent = "云同步服务尚未配置，当前仍使用浏览器本地题库。";
+		if (loginButton) loginButton.hidden = true;
+		setCloudStatus("当前仅保存在这个浏览器。", true);
+	} else {
+		const { data } = await supabase.auth.getUser();
+		renderCloudUser(data.user);
+		if (data.user) {
+			if (!sessionStorage.getItem("game-login-audited")) {
+				sessionStorage.setItem("game-login-audited", "1");
+				void writeAudit(data.user, "login");
+			}
+			try { await restoreNewerCloudBank(data.user); }
+			catch (error) { setCloudStatus(`云端题库读取失败：${error instanceof Error ? error.message : "未知错误"}`, true); }
+		}
+		supabase.auth.onAuthStateChange((event, session) => {
+			renderCloudUser(session?.user ?? null);
+			if (event === "SIGNED_IN" && session?.user) void restoreNewerCloudBank(session.user).catch((error) => setCloudStatus(`云端题库读取失败：${error instanceof Error ? error.message : "未知错误"}`, true));
+		});
+	}
 </script>

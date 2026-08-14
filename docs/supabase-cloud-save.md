@@ -6,7 +6,7 @@
 2. Authentication → Providers 中启用 Email；需要 GitHub 登录时，再启用 GitHub Provider，并按 Supabase 页面给出的 callback URL 配置 GitHub OAuth App。
 3. Authentication → URL Configuration：
    - Site URL：`https://649082922.github.io`
-   - Redirect URLs 增加 `https://649082922.github.io/games/` 和本地调试地址。
+   - Redirect URLs 增加 `https://649082922.github.io/games/`、`https://649082922.github.io/quiz-library/` 和本地调试地址。
 4. 在 GitHub 仓库 Settings → Secrets and variables → Actions 添加：
    - Variable：`PUBLIC_SUPABASE_URL`
    - Secret：`PUBLIC_SUPABASE_PUBLISHABLE_KEY`
@@ -15,3 +15,5 @@
 7. 隐藏审计页面地址：`/owner/audit/`。它不显示在网站导航与 sitemap 中，且数据库 RLS 只允许 `site_admins` 中的账号读取日志。
 
 审计日志仅包含已登录用户的登录、退出、云存档上传和恢复事件，不追踪匿名访客，也不采集 IP 或浏览器指纹。
+
+题库页会把当前上传的题库保存到 `quiz_banks`。同一个 GitHub 账号在其他设备登录后，会自动恢复较新的云端题库；答题进度仍保留在各设备本地。
