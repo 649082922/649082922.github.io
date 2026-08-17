@@ -16,15 +16,28 @@ export type CloudQuizBank = {
 // 统一包装成 Error，并保留 code / hint 供上层识别会话失效等场景。
 function toCloudError(error: unknown): Error {
 	if (error instanceof Error) return error;
-	const detail = error as { message?: string; code?: string; hint?: string | null; details?: string | null };
+	const detail = error as {
+		message?: string;
+		code?: string;
+		hint?: string | null;
+		details?: string | null;
+	};
 	const parts = [detail?.message, detail?.code, detail?.hint].filter(Boolean);
-	const enriched = new Error(parts.join(" / ") || "未知错误") as Error & { code?: string; hint?: string | null };
+	const enriched = new Error(parts.join(" / ") || "未知错误") as Error & {
+		code?: string;
+		hint?: string | null;
+	};
 	enriched.code = detail?.code;
 	enriched.hint = detail?.hint ?? null;
 	return enriched;
 }
 
-export async function uploadQuizBank(user: User, name: string, bank: QuizBank, updatedAt = new Date().toISOString()) {
+export async function uploadQuizBank(
+	user: User,
+	name: string,
+	bank: QuizBank,
+	updatedAt = new Date().toISOString(),
+) {
 	if (!supabase) throw new Error("云同步尚未配置");
 	const { error } = await supabase.from("quiz_banks").upsert({
 		user_id: user.id,
@@ -36,7 +49,9 @@ export async function uploadQuizBank(user: User, name: string, bank: QuizBank, u
 	return updatedAt;
 }
 
-export async function downloadQuizBank(user: User): Promise<CloudQuizBank | null> {
+export async function downloadQuizBank(
+	user: User,
+): Promise<CloudQuizBank | null> {
 	if (!supabase) throw new Error("云同步尚未配置");
 	const { data, error } = await supabase
 		.from("quiz_banks")
@@ -54,6 +69,9 @@ export async function downloadQuizBank(user: User): Promise<CloudQuizBank | null
 
 export async function deleteQuizBank(user: User) {
 	if (!supabase) throw new Error("云同步尚未配置");
-	const { error } = await supabase.from("quiz_banks").delete().eq("user_id", user.id);
+	const { error } = await supabase
+		.from("quiz_banks")
+		.delete()
+		.eq("user_id", user.id);
 	if (error) throw toCloudError(error);
 }
