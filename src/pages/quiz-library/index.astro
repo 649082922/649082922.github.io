@@ -293,6 +293,34 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		if (logoutButton) logoutButton.hidden = !user;
 	}
 
+	// 提取任意错误对象（含 Supabase PostgrestError/AuthError 普通对象）的可读信息
+	function describeCloudError(error: unknown): string {
+		if (error instanceof Error && error.message) return error.message;
+		const detail = error as { message?: string; code?: string; hint?: string | null };
+		const parts = [detail?.message, detail?.code, detail?.hint].filter(Boolean);
+		return parts.join(" / ") || "未知错误";
+	}
+
+	// 识别“会话凭证失效”类错误：token 过期、JWT 验签失败等
+	function isStaleSessionError(error: unknown): boolean {
+		const detail = error as { code?: string; status?: number; message?: string };
+		const code = String(detail?.code ?? "");
+		const message = String(detail?.message ?? "");
+		return code === "PGRST301" || code === "401" || code === "bad_jwt" || detail?.status === 401
+			|| /jwt|wrong key|invalid.*token|token.*invalid|token.*expired/i.test(message);
+	}
+
+	// 统一的云端失败处理：会话失效则自动清掉死 session 并引导重新登录，其余显示真实原因
+	async function handleCloudFailure(prefix: string, error: unknown) {
+		if (isStaleSessionError(error) && supabase) {
+			await supabase.auth.signOut().catch(() => {});
+			renderCloudUser(null);
+			setCloudStatus(`${prefix}：登录凭证已过期，已自动清理，请重新点击「GitHub 登录」。`, true);
+			return;
+		}
+		setCloudStatus(`${prefix}：${describeCloudError(error)}`, true);
+	}
+
 	async function restoreNewerCloudBank(user: User, force = false) {
 		const cloud = await downloadQuizBank(user);
 		if (!cloud) {
@@ -338,7 +366,7 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		renderCurrent();
 		if (currentUser) {
 			try { await deleteQuizBank(currentUser); setCloudStatus("本地和云端题库均已清空。 "); }
-			catch (error) { setCloudStatus(`本地已清空，但云端删除失败：${error instanceof Error ? error.message : "未知错误"}`, true); }
+			catch (error) { await handleCloudFailure("本地已清空，但云端删除失败", error); }
 		}
 	});
 
@@ -393,13 +421,13 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 			await uploadQuizBank(currentUser, name, bank, updatedAt);
 			localStorage.setItem(UPDATED_KEY, updatedAt);
 			setCloudStatus(`“${name}”已同步到云端。`);
-		} catch (error) { setCloudStatus(`同步失败：${error instanceof Error ? error.message : "未知错误"}`, true); }
+		} catch (error) { await handleCloudFailure("同步失败", error); }
 	});
 
 	downloadCloudButton?.addEventListener("click", async () => {
 		if (!currentUser) return;
 		try { setCloudStatus("正在读取云端题库…"); await restoreNewerCloudBank(currentUser, true); }
-		catch (error) { setCloudStatus(`恢复失败：${error instanceof Error ? error.message : "未知错误"}`, true); }
+		catch (error) { await handleCloudFailure("恢复失败", error); }
 	});
 
 	logoutButton?.addEventListener("click", async () => {
@@ -424,11 +452,11 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 				void writeAudit(data.user, "login");
 			}
 			try { await restoreNewerCloudBank(data.user); }
-			catch (error) { setCloudStatus(`云端题库读取失败：${error instanceof Error ? error.message : "未知错误"}`, true); }
+			catch (error) { await handleCloudFailure("云端题库读取失败", error); }
 		}
 		supabase.auth.onAuthStateChange((event, session) => {
 			renderCloudUser(session?.user ?? null);
-			if (event === "SIGNED_IN" && session?.user) void restoreNewerCloudBank(session.user).catch((error) => setCloudStatus(`云端题库读取失败：${error instanceof Error ? error.message : "未知错误"}`, true));
+			if (event === "SIGNED_IN" && session?.user) void restoreNewerCloudBank(session.user).catch((error) => handleCloudFailure("云端题库读取失败", error));
 		});
 	}
 </script>
