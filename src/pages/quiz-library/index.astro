@@ -117,9 +117,11 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 	.bank-row-top { display: flex; align-items: center; justify-content: space-between; gap: .6rem; min-width: 0; }
 	.bank-row-top strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .95rem; color: var(--library-text); }
 	.bank-row small { font-size: .72rem; line-height: 1.5; color: var(--library-muted); }
-	.bank-visibility { display: inline-flex; align-items: center; gap: .35rem; flex-shrink: 0; padding: .3rem .6rem; border: 1px solid var(--library-line); border-radius: .5rem; background: transparent; color: var(--library-muted); cursor: pointer; font-family: inherit; font-size: .7rem; font-weight: 750; }
+	.bank-switch { display: inline-flex; flex-shrink: 0; border: 1px solid var(--library-line); border-radius: .5rem; overflow: hidden; cursor: pointer; background: color-mix(in srgb, var(--primary) 3%, transparent); user-select: none; }
+	.bank-switch span { padding: .3rem .66rem; font-size: .68rem; font-weight: 750; color: var(--library-muted); transition: background .15s ease, color .15s ease; }
+	.bank-switch span.on { background: var(--primary); color: var(--library-on-primary); }
+	.bank-switch:hover span:not(.on) { color: var(--library-text); }
 	.bank-cur { flex-shrink: 0; margin-left: .45rem; padding: .18rem .42rem; border-radius: .35rem; background: color-mix(in srgb, var(--primary) 10%, transparent); color: var(--primary); font-size: .62rem; font-style: normal; font-weight: 750; }
-	.bank-visibility.is-public { border-color: var(--primary); color: var(--primary); }
 	.bank-row-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
 	.bank-row-actions button, .bank-row-actions a { border: 1px solid var(--library-line); border-radius: .5rem; padding: .5rem .8rem; background: transparent; color: var(--library-text); cursor: pointer; font-family: inherit; font-size: .72rem; font-weight: 750; line-height: 1; text-decoration: none; }
 	.bank-row-actions .primary-action { border-color: var(--primary); background: var(--primary); color: var(--library-on-primary); font-weight: 850; }
@@ -408,7 +410,9 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 				<div class="bank-row">
 					<div class="bank-row-top">
 						<strong title="${escapeHtml(meta.name)}">${escapeHtml(meta.name)}${meta.id === activeId ? '<i class="bank-cur">当前</i>' : ""}</strong>
-						<button type="button" class="bank-visibility ${meta.isPublic ? "is-public" : ""}" data-action="toggle-public" data-id="${meta.id}" data-pub="${meta.isPublic ? "1" : "0"}" title="切换公开/私有">${meta.isPublic ? "公开" : "私有"}</button>
+						<div class="bank-switch" role="switch" aria-checked="${meta.isPublic ? "true" : "false"}" aria-label="公开或私有" data-action="toggle-public" data-id="${meta.id}" data-pub="${meta.isPublic ? "1" : "0"}">
+							<span class="${meta.isPublic ? "" : "on"}">私有</span><span class="${meta.isPublic ? "on" : ""}">公开</span>
+						</div>
 					</div>
 					<small>${fmtTime(meta.updatedAt)}</small>
 					<div class="bank-row-actions">
