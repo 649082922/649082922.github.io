@@ -25,32 +25,40 @@ to authenticated
 using ((select auth.uid()) = user_id)
 with check ((select auth.uid()) = user_id);
 
+-- 多题库：一个账号多份题库，每份可独立设公开（未登录可刷）/ 私有（仅本人）。
 create table if not exists public.quiz_banks (
-  user_id uuid primary key references auth.users(id) on delete cascade,
+  id uuid primary key default gen_random_uuid(),
+  user_id uuid not null references auth.users(id) on delete cascade,
+  owner_name text not null default '',
   name text not null default '我的题库',
+  is_public boolean not null default false,
   bank jsonb not null,
+  created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
 
+create index if not exists quiz_banks_user_idx on public.quiz_banks (user_id);
+create index if not exists quiz_banks_public_idx on public.quiz_banks (is_public) where is_public;
+
 alter table public.quiz_banks enable row level security;
 
-create policy "users read own quiz bank"
+create policy "read own or public quiz banks"
 on public.quiz_banks for select
-to authenticated
-using ((select auth.uid()) = user_id);
+to authenticated, anon
+using (is_public or (select auth.uid()) = user_id);
 
-create policy "users create own quiz bank"
+create policy "insert own quiz banks"
 on public.quiz_banks for insert
 to authenticated
 with check ((select auth.uid()) = user_id);
 
-create policy "users update own quiz bank"
+create policy "update own quiz banks"
 on public.quiz_banks for update
 to authenticated
 using ((select auth.uid()) = user_id)
 with check ((select auth.uid()) = user_id);
 
-create policy "users delete own quiz bank"
+create policy "delete own quiz banks"
 on public.quiz_banks for delete
 to authenticated
 using ((select auth.uid()) = user_id);
