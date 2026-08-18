@@ -347,6 +347,7 @@ function render(){
   document.getElementById('next-btn-side').disabled=currentIndex===list.length-1;
   document.getElementById('submit-btn').disabled=isAns;
   genPageNav(list);
+  try{localStorage.setItem(KEY+'pos',JSON.stringify({t:currentType,i:currentIndex}));}catch(e){}
 }
 function genPageNav(list){
   var nav=document.getElementById('page-nav');
@@ -447,7 +448,17 @@ document.addEventListener('keydown',function(e){
   }
 });
 // 初始化
-load();updateStats();rebuildWrong();render();
+load();updateStats();rebuildWrong();
+try{
+  var savedPos=JSON.parse(localStorage.getItem(KEY+'pos')||'null');
+  if(savedPos&&savedPos.t&&savedPos.i>=0){
+    if(savedPos.t==='wrong'){rebuildWrong();}
+    var posList=questions[savedPos.t];
+    if(posList&&posList.length){currentType=savedPos.t;currentIndex=Math.min(savedPos.i,posList.length-1);}
+  }
+}catch(e){}
+document.querySelectorAll('.tab').forEach(function(t){t.classList.toggle('active',t.dataset.type===currentType);});
+render();
 </script>
 </body>
 </html>
