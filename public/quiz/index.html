@@ -400,7 +400,7 @@ function submit(){
     if(!correct){var wk=currentType+'-'+currentIndex;if(!wrongSet.has(wk)){wrongSet.add(wk);saveWrong();rebuildWrong();updateStats();showToast('已加入错题本');}}
   }
   render();
-  if(correct&&currentIndex<list.length-1){showToast('回答正确，可以进入下一题');}
+  if(correct&&currentIndex<list.length-1){setTimeout(function(){if(currentIndex<questions[currentType].length-1){currentIndex++;render();}},900);}
 }
 // 事件绑定
 document.querySelectorAll('.tab').forEach(function(tab){
@@ -441,7 +441,10 @@ document.addEventListener('keydown',function(e){
   if(e.target&&e.target.tagName==='INPUT')return;
   if(e.key==='ArrowLeft'&&currentIndex>0){currentIndex--;render();}
   if(e.key==='ArrowRight'&&currentIndex<questions[currentType].length-1){currentIndex++;render();}
-  if(e.key==='Enter'&&!document.getElementById('submit-btn').disabled)submit();
+  if(e.key==='Enter'){
+    if(!document.getElementById('submit-btn').disabled)submit();
+    else if(currentIndex<questions[currentType].length-1){currentIndex++;render();}
+  }
 });
 // 初始化
 load();updateStats();rebuildWrong();render();
