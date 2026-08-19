@@ -171,7 +171,6 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 </style>
 
 <script>
-	import * as XLSX from "xlsx";
 	import { isCloudConfigured, supabase, writeAudit } from "@/lib/game-cloud";
 	import {
 		deleteQuizBank,
@@ -289,6 +288,8 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 
 	async function readBank(file: File): Promise<QuizBank> {
 		if (/\.json$/i.test(file.name)) return bankFromJson(JSON.parse(await file.text()));
+		// xlsx 体积大，仅在真正解析 Excel 时才按需加载，避免拖慢首屏
+		const XLSX = await import("xlsx");
 		const workbook = XLSX.read(await file.arrayBuffer(), { type: "array" });
 		for (const sheetName of workbook.SheetNames) {
 			const rows = XLSX.utils.sheet_to_json<unknown[]>(workbook.Sheets[sheetName], { header: 1, raw: false, defval: "" });
@@ -368,26 +369,43 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		return `${date.getMonth() + 1}月${date.getDate()}日 ${pad(date.getHours())}:${pad(date.getMinutes())}`;
 	}
 
-	// 渲染「公开题库」区：任何人可见（未登录也能刷），出错时静默隐藏
+	// 渲染「公开题库」区：先显示上次缓存，后台刷新最新；出错且有缓存时保留缓存
+	function fillPublicList(banks: { id: string; name: string; ownerName: string; updatedAt: string }[]) {
+		const list = byId<HTMLElement>("public-bank-list");
+		if (!list) return;
+		list.innerHTML = banks.map((meta) => `
+			<div class="bank-row">
+				<div class="bank-row-top"><strong title="${escapeHtml(meta.name)}">${escapeHtml(meta.name)}</strong></div>
+				<small>${meta.ownerName ? `${escapeHtml(meta.ownerName)} · ` : ""}${fmtTime(meta.updatedAt)}</small>
+				<div class="bank-row-actions">
+					<button type="button" class="primary-action" data-action="open" data-id="${meta.id}" data-name="${escapeHtml(meta.name)}">刷题</button>
+				</div>
+			</div>`).join("");
+	}
+
 	async function renderPublicBanks() {
 		const section = byId<HTMLElement>("public-banks-section");
 		const list = byId<HTMLElement>("public-bank-list");
 		if (!section || !list) return;
 		if (!isCloudConfigured || !supabase) { section.hidden = true; return; }
+		let cached: unknown[] = [];
+		try { cached = JSON.parse(localStorage.getItem("quiz-public-banks-cache") || "[]") ?? []; } catch { cached = []; }
+		if (Array.isArray(cached) && cached.length) {
+			fillPublicList(cached as never[]);
+			section.hidden = false;
+		}
 		try {
 			const banks = await listPublicQuizBanks();
-			if (!banks.length) { section.hidden = true; return; }
+			localStorage.setItem("quiz-public-banks-cache", JSON.stringify(banks));
+			if (!banks.length) {
+				localStorage.removeItem("quiz-public-banks-cache");
+				if (!cached.length) section.hidden = true;
+				return;
+			}
 			section.hidden = false;
-			list.innerHTML = banks.map((meta) => `
-				<div class="bank-row">
-					<div class="bank-row-top"><strong title="${escapeHtml(meta.name)}">${escapeHtml(meta.name)}</strong></div>
-					<small>${meta.ownerName ? `${escapeHtml(meta.ownerName)} · ` : ""}${fmtTime(meta.updatedAt)}</small>
-					<div class="bank-row-actions">
-						<button type="button" class="primary-action" data-action="open" data-id="${meta.id}" data-name="${escapeHtml(meta.name)}">刷题</button>
-					</div>
-				</div>`).join("");
+			fillPublicList(banks);
 		} catch {
-			section.hidden = true;
+			if (!cached.length && !list.children.length) section.hidden = true;
 		}
 	}
 
@@ -553,16 +571,20 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		setCloudStatus("当前仅保存在这个浏览器。", true);
 	} else {
 		void renderPublicBanks();
-		const { data } = await supabase.auth.getUser();
-		renderCloudUser(data.user);
-		if (data.user) {
+		// getSession 本地恢复登录态（无网络往返）；token 失效由列表查询的 401 自愈逻辑兜底
+		const { data } = await supabase.auth.getSession();
+		const user = data.session?.user ?? null;
+		renderCloudUser(user);
+		if (user) {
 			if (!sessionStorage.getItem("game-login-audited")) {
 				sessionStorage.setItem("game-login-audited", "1");
-				void writeAudit(data.user, "login");
+				void writeAudit(user, "login");
 			}
-			await renderMyBanks(data.user);
+			await renderMyBanks(user);
 		}
+		// 仅登录/登出事件才刷新界面，避免 INITIAL_SESSION/TOKEN_REFRESHED 触发重复请求
 		supabase.auth.onAuthStateChange((event, session) => {
+			if (event !== "SIGNED_IN" && event !== "SIGNED_OUT") return;
 			renderCloudUser(session?.user ?? null);
 			void renderMyBanks(session?.user ?? null);
 		});
