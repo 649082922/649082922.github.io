@@ -11,16 +11,19 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		</header>
 
 		<section class="cloud-sync" id="quiz-cloud-sync">
-			<div>
-				<span class="bank-tag">跨设备同步</span>
-				<strong id="quiz-cloud-user">尚未登录</strong>
-				<small id="quiz-cloud-description">登录 GitHub 后可云端保存多份题库。</small>
+			<button class="cloud-toggle" id="cloud-toggle" type="button">跨设备同步<i>展开</i></button>
+			<div class="cloud-body">
+				<div>
+					<span class="bank-tag">跨设备同步</span>
+					<strong id="quiz-cloud-user">尚未登录</strong>
+					<small id="quiz-cloud-description">登录 GitHub 后可云端保存多份题库。</small>
+				</div>
+				<div class="cloud-actions">
+					<button class="github-action" id="quiz-login-github" type="button">GitHub 登录</button>
+					<button id="quiz-logout" type="button" hidden>退出登录</button>
+				</div>
+				<p id="quiz-cloud-status" aria-live="polite"></p>
 			</div>
-			<div class="cloud-actions">
-				<button class="github-action" id="quiz-login-github" type="button">GitHub 登录</button>
-				<button id="quiz-logout" type="button" hidden>退出登录</button>
-			</div>
-			<p id="quiz-cloud-status" aria-live="polite"></p>
 		</section>
 
 		<section class="bank-section" id="public-banks-section" hidden>
@@ -59,13 +62,16 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 			</label>
 		</div>
 
-		<div class="format-note">
-			<div>
-				<strong>Excel 格式</strong>
-				<span>首行为“类别、题目、选项、答案”。类别支持单选、多选、判断；选项用 A—、B—、C— 分隔。</span>
+		<details class="format-note">
+			<summary>Excel / JSON 格式说明</summary>
+			<div class="format-body">
+				<div>
+					<strong>Excel 格式</strong>
+					<span>首行为“类别、题目、选项、答案”。类别支持单选、多选、判断；选项用 A—、B—、C— 分隔。</span>
+				</div>
+				<div class="example-row"><b>单选</b><span>OceanBase 的特点是？</span><code>A— 分布式数据库<br />B— 文本编辑器</code><b>A</b></div>
 			</div>
-			<div class="example-row"><b>单选</b><span>OceanBase 的特点是？</span><code>A— 分布式数据库<br />B— 文本编辑器</code><b>A</b></div>
-		</div>
+		</details>
 
 		<div class="upload-progress" id="upload-progress" hidden><span id="progress-label">正在读取题库…</span><i></i></div>
 		<p class="upload-status" id="upload-status" aria-live="polite"></p>
@@ -99,6 +105,11 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 	.page-head h1 { margin: 0; font-size: clamp(2rem, 5vw, 3.6rem); line-height: 1.08; letter-spacing: -.05em; color: var(--library-text); }
 	.page-head > span { display: block; margin-top: 1rem; font-size: .95rem; line-height: 1.75; color: var(--library-muted); }
 	.cloud-sync { margin-top: 1.25rem; padding: 1rem 1.1rem; border: 1px solid var(--library-line); border-radius: .85rem; background: color-mix(in srgb, var(--primary) 4%, transparent); display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .8rem 1rem; align-items: center; }
+	.cloud-body { display: contents; }
+	.cloud-toggle { display: none; width: 100%; align-items: center; justify-content: space-between; border: 0; background: transparent; color: var(--library-muted); cursor: pointer; font-family: inherit; font-size: .76rem; font-weight: 750; }
+	.cloud-toggle::before { content: "▸"; margin-right: .45rem; color: var(--primary); }
+	.cloud-sync.collapsed .cloud-toggle::before { content: "▹"; }
+	.cloud-toggle i { color: var(--primary); font-style: normal; }
 	.cloud-sync > div:first-child { min-width: 0; }
 	.cloud-sync strong { display: block; margin-top: .7rem; color: var(--library-text); font-size: .92rem; }
 	.cloud-sync small { display: block; margin-top: .28rem; color: var(--library-muted); font-size: .76rem; line-height: 1.55; }
@@ -144,7 +155,13 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 	.card-actions button:hover { border-color: color-mix(in srgb, var(--library-text) 55%, transparent); background: rgba(255, 255, 255, 0.06); }
 	.primary-action { border-color: var(--primary) !important; background: var(--primary) !important; color: var(--library-on-primary) !important; font-weight: 850 !important; }
 	.primary-action:hover { filter: brightness(1.08) saturate(1.05); }
-	.format-note { margin-top: 1rem; padding: 1rem 1.1rem; border: 1px solid var(--library-line); border-radius: .8rem; background: color-mix(in srgb, var(--primary) 3%, transparent); display: grid; grid-template-columns: minmax(14rem, .6fr) minmax(0, 1.4fr); gap: 1rem; align-items: center; }
+	.format-note { margin-top: 1rem; border: 1px solid var(--library-line); border-radius: .8rem; background: color-mix(in srgb, var(--primary) 3%, transparent); }
+	.format-note summary { padding: .78rem 1.1rem; cursor: pointer; font-size: .78rem; font-weight: 700; color: var(--library-muted); list-style: none; }
+	.format-note summary::-webkit-details-marker { display: none; }
+	.format-note summary::before { content: "▸"; margin-right: .45rem; color: var(--primary); transition: transform .15s ease; display: inline-block; }
+	.format-note[open] summary::before { transform: rotate(90deg); }
+	.format-note summary:hover { color: var(--library-text); }
+	.format-body { padding: .2rem 1.1rem 1rem; display: grid; grid-template-columns: minmax(14rem, .6fr) minmax(0, 1.4fr); gap: 1rem; align-items: center; }
 	.format-note strong { display: block; font-size: .82rem; color: var(--library-text); }
 	.format-note span { display: block; margin-top: .32rem; font-size: .74rem; line-height: 1.55; color: var(--library-muted); }
 	.example-row { display: grid; grid-template-columns: auto minmax(8rem, 1fr) minmax(11rem, 1.5fr) auto; gap: .6rem; align-items: center; padding: .65rem .75rem; border-radius: .55rem; background: rgba(128,120,112,.08); color: var(--library-muted); font-size: .7rem; }
@@ -158,9 +175,12 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 	@media (max-width: 720px) {
 		.library-page { padding: 1.1rem; border-radius: 1rem; }
 		.cloud-sync { grid-template-columns: 1fr; }
+		.cloud-toggle { display: flex; }
+		.cloud-sync.collapsed { padding: .55rem .9rem; }
+		.cloud-sync.collapsed .cloud-body { display: none; }
 		.cloud-actions { justify-content: flex-start; }
 		.bank-card { min-height: 12rem; }
-		.format-note { grid-template-columns: 1fr; }
+		.format-body { grid-template-columns: 1fr; }
 		.example-row { grid-template-columns: auto 1fr auto; }
 		.example-row code { grid-column: 1 / -1; }
 	}
@@ -565,6 +585,17 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 	});
 
 	renderCurrent();
+	// 窄屏下云同步区默认收成一行，点击展开；宽屏不受影响
+	const cloudSyncSection = byId<HTMLElement>("quiz-cloud-sync");
+	const cloudToggle = byId<HTMLButtonElement>("cloud-toggle");
+	cloudToggle?.addEventListener("click", () => {
+		const collapsed = cloudSyncSection?.classList.toggle("collapsed") ?? false;
+		const label = cloudToggle.querySelector("i");
+		if (label) label.textContent = collapsed ? "展开" : "收起";
+	});
+	if (cloudSyncSection && window.matchMedia("(max-width: 720px)").matches) {
+		cloudSyncSection.classList.add("collapsed");
+	}
 	if (!isCloudConfigured || !supabase) {
 		if (cloudDescription) cloudDescription.textContent = "云同步服务尚未配置，当前仍使用浏览器本地题库。";
 		if (loginButton) loginButton.hidden = true;
