@@ -15,4 +15,4 @@ export const MAIN_PANEL_OVERLAPS_BANNER_HEIGHT = 3.5;
 
 // Page width: rem
 // 宽屏下充分利用可用空间，同时由布局的 px-4 保留安全边距
-export const PAGE_WIDTH = 94;
+export const PAGE_WIDTH = 115;
