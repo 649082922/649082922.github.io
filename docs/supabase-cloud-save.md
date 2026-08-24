@@ -5,8 +5,8 @@
 1. 在 Supabase 新建项目，在 SQL Editor 执行 `supabase/schema.sql`。
 2. Authentication → Providers 中启用 GitHub Provider，并按 Supabase 页面给出的 callback URL 配置 GitHub OAuth App。网站只提供 GitHub 登录。
 3. Authentication → URL Configuration：
-   - Site URL：`https://649082922.github.io`
-   - Redirect URLs 增加 `https://649082922.github.io/games/`、`https://649082922.github.io/quiz-library/` 和本地调试地址。
+   - Site URL：`https://blog.newworld.help`
+   - Redirect URLs 增加 `https://blog.newworld.help/games/`、`https://blog.newworld.help/quiz-library/` 和本地调试地址。
 4. 在 GitHub 仓库 Settings → Secrets and variables → Actions 添加：
    - Variable：`PUBLIC_SUPABASE_URL`
    - Secret：`PUBLIC_SUPABASE_PUBLISHABLE_KEY`
