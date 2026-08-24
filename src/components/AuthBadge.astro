@@ -1,0 +1,87 @@
+---
+import { Icon } from "astro-icon/components";
+
+const cloudReady = Boolean(
+	import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+);
+---
+{cloudReady && (
+<div id="auth-badge" class="relative">
+	<button aria-label="账号" name="Account" class="btn-plain scale-animation rounded-lg w-11 h-11 active:scale-90 relative" id="auth-switch">
+		<Icon name="material-symbols:person-outline-rounded" class="text-[1.25rem]"></Icon>
+		<span id="auth-dot" class="absolute right-1.5 bottom-1.5 w-2 h-2 rounded-full bg-black/20 dark:bg-white/25 transition"></span>
+	</button>
+	<div id="auth-panel" class="float-panel-closed absolute right-0 top-[3.4rem] card-base !rounded-xl w-56 p-4 z-50">
+		<div id="auth-signed-out">
+			<p class="text-sm font-bold mb-1">云存档账号</p>
+			<p class="text-xs opacity-60 mb-3 leading-relaxed">登录一次，小游戏进度和题库记录全站通用。</p>
+			<button id="auth-login" class="w-full h-9 rounded-lg bg-[#24292f] text-white text-sm font-bold active:scale-95 transition" type="button">GitHub 登录</button>
+		</div>
+		<div id="auth-signed-in" hidden>
+			<p class="text-xs opacity-60 mb-0.5">已登录</p>
+			<p id="auth-username" class="text-sm font-bold truncate mb-3"></p>
+			<button id="auth-logout" class="w-full h-9 rounded-lg border border-black/10 dark:border-white/20 text-sm font-bold active:scale-95 transition" type="button">退出登录</button>
+		</div>
+		<p id="auth-status" class="text-xs mt-2 text-[var(--primary)] min-h-[1.1rem]" aria-live="polite"></p>
+	</div>
+</div>
+)}
+<script>
+	import { supabase } from "@/lib/game-cloud";
+
+	const badge = document.getElementById("auth-badge");
+	const panel = document.getElementById("auth-panel");
+	const dot = document.getElementById("auth-dot");
+	const signedOut = document.getElementById("auth-signed-out");
+	const signedIn = document.getElementById("auth-signed-in");
+	const username = document.getElementById("auth-username");
+	const status = document.getElementById("auth-status");
+	if (badge && panel && supabase) {
+		const setBusy = (msg: string) => {
+			if (status) status.textContent = msg;
+		};
+
+		const render = (email: string | null | undefined, name: string | null | undefined) => {
+			const signed = Boolean(email || name);
+			if (signedOut) signedOut.hidden = signed;
+			if (signedIn) signedIn.hidden = !signed;
+			if (username) username.textContent = name ?? email ?? "已登录用户";
+			if (dot) dot.className = signed
+				? "absolute right-1.5 bottom-1.5 w-2 h-2 rounded-full bg-[#2a9d62] transition"
+				: "absolute right-1.5 bottom-1.5 w-2 h-2 rounded-full bg-black/20 dark:bg-white/25 transition";
+		};
+
+		const applyUser = (user: { email?: string | null; user_metadata?: Record<string, unknown> } | null) => {
+			const meta = user?.user_metadata as { user_name?: string; full_name?: string } | undefined;
+			render(user?.email ?? null, meta?.user_name ?? meta?.full_name ?? null);
+		};
+
+		void supabase.auth.getUser().then(({ data }) => applyUser(data.user));
+		supabase.auth.onAuthStateChange((event, session) => {
+			applyUser(session?.user ?? null);
+			if (event === "SIGNED_IN") setBusy("登录成功，全站生效。");
+			if (event === "SIGNED_OUT") setBusy("");
+		});
+
+		document.getElementById("auth-switch")?.addEventListener("click", (e) => {
+			e.stopPropagation();
+			panel.classList.toggle("float-panel-closed");
+		});
+		panel.addEventListener("click", (e) => e.stopPropagation());
+		document.addEventListener("click", () => panel.classList.add("float-panel-closed"));
+
+		document.getElementById("auth-login")?.addEventListener("click", async () => {
+			setBusy("正在跳转到 GitHub…");
+			const { error } = await supabase.auth.signInWithOAuth({
+				provider: "github",
+				options: { redirectTo: `${window.location.origin}${window.location.pathname}` },
+			});
+			if (error) setBusy(`登录失败：${error.message}`);
+		});
+
+		document.getElementById("auth-logout")?.addEventListener("click", async () => {
+			await supabase.auth.signOut();
+			setBusy("已退出登录。");
+		});
+	}
+</script>
