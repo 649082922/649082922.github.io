@@ -2,7 +2,8 @@
 import { Icon } from "astro-icon/components";
 
 const cloudReady = Boolean(
-	import.meta.env.PUBLIC_SUPABASE_URL && import.meta.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+	import.meta.env.PUBLIC_SUPABASE_URL &&
+		import.meta.env.PUBLIC_SUPABASE_PUBLISHABLE_KEY,
 );
 ---
 {cloudReady && (
@@ -36,7 +37,8 @@ const cloudReady = Boolean(
 	const signedIn = document.getElementById("auth-signed-in");
 	const username = document.getElementById("auth-username");
 	const status = document.getElementById("auth-status");
-	if (badge && panel && supabase) {
+	const sb = supabase;
+	if (badge && panel && sb) {
 		const setBusy = (msg: string) => {
 			if (status) status.textContent = msg;
 		};
@@ -56,8 +58,8 @@ const cloudReady = Boolean(
 			render(user?.email ?? null, meta?.user_name ?? meta?.full_name ?? null);
 		};
 
-		void supabase.auth.getUser().then(({ data }) => applyUser(data.user));
-		supabase.auth.onAuthStateChange((event, session) => {
+		void sb.auth.getUser().then(({ data }) => applyUser(data.user));
+		sb.auth.onAuthStateChange((event, session) => {
 			applyUser(session?.user ?? null);
 			if (event === "SIGNED_IN") setBusy("登录成功，全站生效。");
 			if (event === "SIGNED_OUT") setBusy("");
@@ -72,7 +74,7 @@ const cloudReady = Boolean(
 
 		document.getElementById("auth-login")?.addEventListener("click", async () => {
 			setBusy("正在跳转到 GitHub…");
-			const { error } = await supabase.auth.signInWithOAuth({
+			const { error } = await sb.auth.signInWithOAuth({
 				provider: "github",
 				options: { redirectTo: `${window.location.origin}${window.location.pathname}` },
 			});
@@ -80,7 +82,7 @@ const cloudReady = Boolean(
 		});
 
 		document.getElementById("auth-logout")?.addEventListener("click", async () => {
-			await supabase.auth.signOut();
+			await sb.auth.signOut();
 			setBusy("已退出登录。");
 		});
 	}
