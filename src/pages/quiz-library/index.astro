@@ -19,7 +19,7 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 					<small id="quiz-cloud-description">登录 GitHub 后可云端保存多份题库。</small>
 				</div>
 				<div class="cloud-actions">
-					<button class="github-action" id="quiz-login-github" type="button">GitHub 登录</button>
+					<button class="github-action" id="quiz-login-github" type="button" hidden>GitHub 登录</button>
 					<button id="quiz-logout" type="button" hidden>退出登录</button>
 				</div>
 				<p id="quiz-cloud-status" aria-live="polite"></p>
@@ -217,7 +217,6 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 	const cloudUser = byId<HTMLElement>("quiz-cloud-user");
 	const cloudDescription = byId<HTMLElement>("quiz-cloud-description");
 	const cloudStatus = byId<HTMLElement>("quiz-cloud-status");
-	const loginButton = byId<HTMLButtonElement>("quiz-login-github");
 	const logoutButton = byId<HTMLButtonElement>("quiz-logout");
 	let currentUser: User | null = null;
 
@@ -346,8 +345,7 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		if (cloudUser) cloudUser.textContent = user ? `${identity} · 云同步已开启` : "尚未登录";
 		if (cloudDescription) cloudDescription.textContent = user
 			? "上传即存云端，换设备登录同一账号继续刷。"
-			: "登录 GitHub 后可云端保存多份题库。";
-		if (loginButton) loginButton.hidden = Boolean(user);
+			: "点右上角 👤 图标登录 GitHub 后可云端保存多份题库。";
 		if (logoutButton) logoutButton.hidden = !user;
 	}
 
@@ -403,7 +401,11 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 			</div>`).join("");
 	}
 
-	async function renderPublicBanks() {
+	// 竞态守卫：Swup 快速切页时旧请求晚返回不得覆盖新一轮结果
+	let publicBanksSeq = 0;
+	let publicBanksFetchedAt = 0;
+
+	async function renderPublicBanks(force = false) {
 		const section = byId<HTMLElement>("public-banks-section");
 		const list = byId<HTMLElement>("public-bank-list");
 		if (!section || !list) return;
@@ -414,17 +416,24 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 			fillPublicList(cached as never[]);
 			section.hidden = false;
 		}
+		// 节流：20 秒内已刷新过就不再发请求，快速切页不产生请求风暴
+		const now = Date.now();
+		if (!force && publicBanksFetchedAt && now - publicBanksFetchedAt < 20_000) return;
+		publicBanksFetchedAt = now;
+		const seq = ++publicBanksSeq;
 		try {
 			const banks = await listPublicQuizBanks();
-			localStorage.setItem("quiz-public-banks-cache", JSON.stringify(banks));
+			if (seq !== publicBanksSeq) return; // 已有更新的请求在跑，丢弃本次结果
 			if (!banks.length) {
-				localStorage.removeItem("quiz-public-banks-cache");
-				if (!cached.length) section.hidden = true;
+				// 空响应可能是网络抖动，保留已有缓存与展示，避免区块时隐时现
+				if (!cached.length && !list.children.length) section.hidden = true;
 				return;
 			}
+			localStorage.setItem("quiz-public-banks-cache", JSON.stringify(banks));
 			section.hidden = false;
 			fillPublicList(banks);
 		} catch {
+			if (seq !== publicBanksSeq) return;
 			if (!cached.length && !list.children.length) section.hidden = true;
 		}
 	}
@@ -482,7 +491,7 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 			await setQuizBankPublic(currentUser, id, isPublic);
 			setCloudStatus(isPublic ? "已公开，别人不登录也能刷。" : "已转为私有。");
 			await renderMyBanks(currentUser);
-			void renderPublicBanks();
+			void renderPublicBanks(true);
 		} catch (error) { await handleCloudFailure("公开状态修改失败", error); }
 	}
 
@@ -565,16 +574,6 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		}
 	});
 
-	loginButton?.addEventListener("click", async () => {
-		if (!supabase) return;
-		setCloudStatus("正在跳转到 GitHub 登录…");
-		const { error } = await supabase.auth.signInWithOAuth({
-			provider: "github",
-			options: { redirectTo: `${window.location.origin}/quiz-library/` },
-		});
-		if (error) setCloudStatus(`登录失败：${error.message}`, true);
-	});
-
 	logoutButton?.addEventListener("click", async () => {
 		if (!supabase || !currentUser) return;
 		await writeAudit(currentUser, "logout");
@@ -598,7 +597,6 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 	}
 	if (!isCloudConfigured || !supabase) {
 		if (cloudDescription) cloudDescription.textContent = "云同步服务尚未配置，当前仍使用浏览器本地题库。";
-		if (loginButton) loginButton.hidden = true;
 		setCloudStatus("当前仅保存在这个浏览器。", true);
 	} else {
 		void renderPublicBanks();
