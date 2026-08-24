@@ -404,8 +404,8 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 	// 统一的云端失败处理：明确的凭证失效先尝试刷新一次，刷新仍失败才清理 session
 	async function handleCloudFailure(prefix: string, error: unknown) {
 		if (isStaleSessionError(error) && supabase) {
-			const { data } = await supabase.auth.refreshSession().catch(() => ({ data: null }));
-			if (data.session) {
+			const refreshed = await supabase.auth.refreshSession().catch(() => null);
+			if (refreshed?.data.session) {
 				setCloudStatus(`${prefix}：登录凭证已自动续期，请重试。`);
 				return;
 			}
