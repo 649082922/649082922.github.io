@@ -78,7 +78,7 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 	</section>
 </MainGridLayout>
 
-<style>
+<style is:global>
 	.library-page {
 		--library-text: #25211e;
 		--library-muted: #746d65;
@@ -391,21 +391,27 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		return parts.join(" / ") || "未知错误";
 	}
 
-	// 识别“会话凭证失效”类错误：token 过期、JWT 验签失败等
+	// 识别“会话凭证失效”类错误：仅明确的 JWT 失效信号才算。
+	// 泛 401/403 可能只是 RLS 权限拒绝或网关抖动，误清 session 会把正常登录的用户登出。
 	function isStaleSessionError(error: unknown): boolean {
-		const detail = error as { code?: string; status?: number; message?: string };
+		const detail = error as { code?: string; message?: string };
 		const code = String(detail?.code ?? "");
 		const message = String(detail?.message ?? "");
-		return code === "PGRST301" || code === "401" || code === "bad_jwt" || detail?.status === 401
-			|| /jwt|wrong key|invalid.*token|token.*invalid|token.*expired/i.test(message);
+		return code === "bad_jwt" || code === "refresh_token_not_found" || code === "refresh_token_invalid"
+			|| /jwt.*(invalid|expired|wrong key)|(invalid|expired).*jwt/i.test(message);
 	}
 
-	// 统一的云端失败处理：会话失效则自动清掉死 session 并引导重新登录，其余显示真实原因
+	// 统一的云端失败处理：明确的凭证失效先尝试刷新一次，刷新仍失败才清理 session
 	async function handleCloudFailure(prefix: string, error: unknown) {
 		if (isStaleSessionError(error) && supabase) {
+			const { data } = await supabase.auth.refreshSession().catch(() => ({ data: null }));
+			if (data.session) {
+				setCloudStatus(`${prefix}：登录凭证已自动续期，请重试。`);
+				return;
+			}
 			await supabase.auth.signOut().catch(() => {});
 			renderCloudUser(null);
-			setCloudStatus(`${prefix}：登录凭证已过期，已自动清理，请重新点击「GitHub 登录」。`, true);
+			setCloudStatus(`${prefix}：登录凭证已过期，已自动清理，请点右上角 👤 重新登录。`, true);
 			return;
 		}
 		setCloudStatus(`${prefix}：${describeCloudError(error)}`, true);
