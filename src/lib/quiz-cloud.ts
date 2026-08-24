@@ -129,27 +129,22 @@ export async function saveQuizBank(
 		...(input.isPublic === undefined ? {} : { is_public: input.isPublic }),
 		updated_at: updatedAt,
 	};
-	let id = input.id;
-	if (id) {
-		const { data, error } = await client
+	if (input.id) {
+		const { error } = await client
 			.from("quiz_banks")
 			.update(row)
-			.eq("id", id)
-			.eq("user_id", user.id)
-			.select("id")
-			.single();
+			.eq("id", input.id)
+			.eq("user_id", user.id);
 		if (error) throw toCloudError(error);
-		id = data.id;
-	} else {
-		const { data, error } = await client
-			.from("quiz_banks")
-			.insert(row)
-			.select("id")
-			.single();
-		if (error) throw toCloudError(error);
-		id = data.id;
+		return input.id;
 	}
-	return id;
+	const { data, error } = await client
+		.from("quiz_banks")
+		.insert(row)
+		.select("id")
+		.single();
+	if (error || !data) throw toCloudError(error);
+	return data.id;
 }
 
 /** 仅切换公开/私有（不动题库内容）。 */
