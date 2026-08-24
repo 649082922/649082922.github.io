@@ -1,6 +1,6 @@
 ---
 title: ob节点故障处理
-published: 2025-08-07
+published: 2026-01-17
 description: "1.修改故障节点租户的locality分布"
 tags: ["OceanBase", "实战笔记"]
 category: 数据库

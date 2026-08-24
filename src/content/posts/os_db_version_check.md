@@ -1,6 +1,6 @@
 ---
 title: os_db_version_check
-published: 2024-08-25
+published: 2025-06-18
 description: "IP_LIST=($(< /root/demo/ipfile.txt))"
 tags: ["Docker", "实战笔记"]
 category: 运维

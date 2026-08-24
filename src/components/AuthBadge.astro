@@ -9,8 +9,7 @@ const cloudReady = Boolean(
 {cloudReady && (
 <div id="auth-badge" class="relative">
 	<button aria-label="账号" name="Account" class="btn-plain scale-animation rounded-lg w-11 h-11 active:scale-90 relative" id="auth-switch">
-		<Icon name="material-symbols:person-outline-rounded" class="text-[1.25rem]"></Icon>
-		<span id="auth-dot" class="absolute right-1.5 bottom-1.5 w-2 h-2 rounded-full bg-black/20 dark:bg-white/25 transition"></span>
+		<Icon name="material-symbols:person-outline-rounded" id="auth-icon" class="text-[1.25rem] transition"></Icon>
 	</button>
 	<div id="auth-panel" class="float-panel-closed absolute right-0 top-[3.4rem] card-base !rounded-xl w-56 p-4 z-50">
 		<div id="auth-signed-out">
@@ -32,7 +31,7 @@ const cloudReady = Boolean(
 
 	const badge = document.getElementById("auth-badge");
 	const panel = document.getElementById("auth-panel");
-	const dot = document.getElementById("auth-dot");
+	const icon = document.getElementById("auth-icon");
 	const signedOut = document.getElementById("auth-signed-out");
 	const signedIn = document.getElementById("auth-signed-in");
 	const username = document.getElementById("auth-username");
@@ -48,9 +47,15 @@ const cloudReady = Boolean(
 			if (signedOut) signedOut.hidden = signed;
 			if (signedIn) signedIn.hidden = !signed;
 			if (username) username.textContent = name ?? email ?? "已登录用户";
-			if (dot) dot.className = signed
-				? "absolute right-1.5 bottom-1.5 w-2 h-2 rounded-full bg-[#2a9d62] transition"
-				: "absolute right-1.5 bottom-1.5 w-2 h-2 rounded-full bg-black/20 dark:bg-white/25 transition";
+			if (icon) {
+				icon.classList.toggle("text-[var(--primary)]", signed);
+				icon.setAttribute(
+					"name",
+					signed
+						? "material-symbols:person-rounded"
+						: "material-symbols:person-outline-rounded",
+				);
+			}
 		};
 
 		const applyUser = (user: { email?: string | null; user_metadata?: Record<string, unknown> } | null) => {

@@ -1,6 +1,6 @@
 ---
 title: redo被删
-published: 2024-12-14
+published: 2025-02-21
 description: "scn推进方法:https://blog.csdn.net/u014596132/article/details/135824919"
 tags: ["Oracle", "实战笔记"]
 category: 数据库

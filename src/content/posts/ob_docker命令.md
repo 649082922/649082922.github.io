@@ -1,6 +1,6 @@
 ---
 title: ob_docker命令
-published: 2024-06-10
+published: 2026-03-14
 description: "docker inspect <container_id_or_name>"
 tags: ["Docker", "实战笔记"]
 category: 运维

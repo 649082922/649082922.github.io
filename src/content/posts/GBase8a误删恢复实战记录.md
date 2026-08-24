@@ -1,6 +1,6 @@
 ---
 title: GBase8a误删恢复实战记录
-published: 2024-08-08
+published: 2026-05-12
 description: "GBase 8a MPP Cluster rm -rf 误删恢复实战记录"
 tags: ["GBase", "实战笔记"]
 category: 数据库

@@ -1,6 +1,6 @@
 ---
 title: db2数据导入导出
-published: 2023-11-13
+published: 2026-02-08
 description: "db2 export to <文件路径> of del select * from <表名>"
 tags: ["DB2", "实战笔记"]
 category: 数据库
