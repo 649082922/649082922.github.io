@@ -1,18 +1,18 @@
 ---
-import { getCollection, render } from "astro:content";
 import type { CollectionEntry } from "astro:content";
-import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { getCollection, render } from "astro:content";
 import Markdown from "@components/misc/Markdown.astro";
+import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { Icon } from "astro-icon/components";
 
 // 1) 取说说（生产环境过滤 draft）
 let talks = await getCollection("talks", ({ data }) =>
-	import.meta.env.PROD ? data.draft !== true : true
+	import.meta.env.PROD ? data.draft !== true : true,
 );
 
 // 2) 按 published 倒序
 talks = talks.sort((a, b) =>
-	a.data.published.getTime() > b.data.published.getTime() ? -1 : 1
+	a.data.published.getTime() > b.data.published.getTime() ? -1 : 1,
 );
 
 // 3) 预渲染每条正文 + 计算时间标签
@@ -32,7 +32,7 @@ const items: TalkItem[] = await Promise.all(
 			monthKey: `${d.getFullYear()}-${p(d.getMonth() + 1)}`,
 			dateLabel: `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`,
 		};
-	})
+	}),
 );
 
 // 4) 按月份分组（保持倒序）

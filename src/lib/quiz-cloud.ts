@@ -119,7 +119,8 @@ export async function saveQuizBank(
 	const ownerName =
 		(user.user_metadata?.user_name as string | undefined) ??
 		(user.user_metadata?.preferred_username as string | undefined) ??
-		(user.email ?? "");
+		user.email ??
+		"";
 	const row = {
 		user_id: user.id,
 		owner_name: ownerName,
