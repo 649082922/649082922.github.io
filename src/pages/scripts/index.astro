@@ -1,0 +1,173 @@
+---
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+
+const scripts = [
+	{
+		title: "os_db_version_check 巡检脚本",
+		tag: "Linux/AIX · 巡检",
+		desc: "批量探测主机操作系统与数据库版本，AIX/Linux 自适应，输出 CSV 便于汇总盘点。",
+		href: "/posts/os_db_version_check/",
+	},
+	{
+		title: "批量 SSH 互信脚本",
+		tag: "Linux · 效率",
+		desc: "多节点批量配置互信，支持各节点不同密码的进阶版本，装集群前必备。",
+		href: "/posts/互信脚本1.0/",
+	},
+	{
+		title: "RMAN 备份脚本",
+		tag: "Oracle · 备份",
+		desc: "归档删除策略、快照控制文件路径与全备脚本组织方式，生产环境长期使用的套路。",
+		href: "/posts/linux下rman脚本/",
+	},
+	{
+		title: "批量导出数据到 Excel",
+		tag: "Oracle · 导数",
+		desc: "大结果集批量落 Excel 的实用做法，交付报表类需求省去逐次手工导出。",
+		href: "/posts/批量导出O到excel/",
+	},
+	{
+		title: "SQL 绑定变量提取与替换",
+		tag: "Oracle · 调优",
+		desc: "把抓到的 SQL 原文还原成绑定变量形式，性能比对与改写时的省力工具。",
+		href: "/posts/替换sql绑定变量/",
+	},
+	{
+		title: "Oracle 进程批量 kill 脚本",
+		tag: "Oracle · 维护",
+		desc: "按条件筛选并批量清理异常会话/进程，事故止血时的标准动作。",
+		href: "/posts/ORACL进程kill脚本/",
+	},
+	{
+		title: "OB 不常用租户清理",
+		tag: "OceanBase · 治理",
+		desc: "识别长期闲置租户并安全回收资源的操作清单，云环境成本治理常用。",
+		href: "/posts/清理不常用租户/",
+	},
+	{
+		title: "达梦装库脚本",
+		tag: "达梦 · 部署",
+		desc: "DM 数据守护集群一键建库的脚本化记录，参数按环境替换后可直接复用。",
+		href: "/posts/装库脚本笔记/",
+	},
+	{
+		title: "分区表在线重定义",
+		tag: "Oracle · 改造",
+		desc: "大表在线重定义改造分区表的完整步骤与风险点核对清单。",
+		href: "/posts/在线重定义分区表/",
+	},
+];
+
+const snippet = `#!/bin/sh
+# 批量检查主机 OS 与数据库版本，输出 CSV
+IP_LIST=($(< ipfile.txt))
+CSV_FILE="OS_check_$(date +'%F_%H%M%S').csv"
+echo "check_type,IP,os,db_version" > "$CSV_FILE"
+
+# 探测逻辑：AIX 走 oslevel，Linux 读 os-release / libc 版本推断 6/7/8
+if [ "$(uname -s)" = "AIX" ]; then
+    pretty_name="$(uname) $(oslevel)"
+else
+    pretty_name=$(grep '^PRETTY_NAME=' /etc/os-release | cut -d'"' -f2)
+    libc_version=$(ldd --version | head -n 1 | awk '{print $NF}' | cut -d '.' -f 2)
+fi
+# 逐台采集并追加 CSV（完整脚本见笔记）`;
+---
+
+<MainGridLayout title="软件&脚本" description="可复用的运维脚本与效率工具精选">
+	<div class="flex w-full rounded-[var(--radius-large)] overflow-hidden relative min-h-32">
+		<div class="card-base z-10 px-9 py-6 relative w-full">
+			<h1 class="text-3xl font-bold text-[var(--primary)] mb-2">软件 & 脚本</h1>
+			<p class="mb-6 opacity-75">
+				生产环境长期使用、可复用的脚本与工具精选。点击卡片查看完整笔记，完整脚本库见
+				<a class="underline text-[var(--primary)] font-bold" target="_blank" href="https://github.com/649082922/dba-notes">dba-notes 仓库</a>。
+			</p>
+
+			<div class="script-grid mb-6">
+				{
+					scripts.map((s) => (
+						<a href={s.href} class="script-card">
+							<span class="script-tag">{s.tag}</span>
+							<h2>{s.title}</h2>
+							<p>{s.desc}</p>
+							<span class="script-link">查看笔记 →</span>
+						</a>
+					))
+				}
+			</div>
+
+			<details class="snippet-box">
+				<summary>os_db_version_check 核心片段</summary>
+				<pre><code>{snippet}</code></pre>
+			</details>
+		</div>
+	</div>
+</MainGridLayout>
+
+<style>
+	.script-grid {
+		display: grid;
+		grid-template-columns: repeat(auto-fill, minmax(17rem, 1fr));
+		gap: 0.9rem;
+	}
+	.script-card {
+		display: flex;
+		flex-direction: column;
+		gap: 0.45rem;
+		padding: 1rem 1.1rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 18%, transparent);
+		border-radius: 0.9rem;
+		background: color-mix(in srgb, var(--primary) 4%, var(--card-bg));
+		transition: border-color 0.2s, transform 0.2s;
+	}
+	.script-card:hover {
+		border-color: var(--primary);
+		transform: translateY(-2px);
+	}
+	.script-tag {
+		font-size: 0.68rem;
+		font-weight: 750;
+		letter-spacing: 0.06em;
+		color: var(--primary);
+	}
+	.script-card h2 {
+		margin: 0;
+		font-size: 1rem;
+		font-weight: 800;
+	}
+	.script-card p {
+		margin: 0;
+		font-size: 0.8rem;
+		line-height: 1.6;
+		opacity: 0.7;
+		flex: 1;
+	}
+	.script-link {
+		font-size: 0.75rem;
+		font-weight: 700;
+		color: var(--primary);
+	}
+	.snippet-box {
+		border: 1px dashed color-mix(in srgb, var(--primary) 30%, transparent);
+		border-radius: 0.9rem;
+		padding: 0.9rem 1.1rem;
+		font-size: 0.85rem;
+	}
+	.snippet-box summary {
+		cursor: pointer;
+		font-weight: 750;
+		color: var(--primary);
+	}
+	.snippet-box pre {
+		margin-top: 0.8rem;
+		padding: 0.9rem;
+		border-radius: 0.6rem;
+		background: rgba(0, 0, 0, 0.05);
+		overflow-x: auto;
+		font-size: 0.75rem;
+		line-height: 1.6;
+	}
+	:global(.dark) .snippet-box pre {
+		background: rgba(255, 255, 255, 0.07);
+	}
+</style>

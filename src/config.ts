@@ -42,8 +42,8 @@ export const navBarConfig: NavBarConfig = {
 			url: "/archive/",
 		},
 		{
-			name: "说说",
-			url: "/talks/", // 说说墙
+			name: "软件&脚本",
+			url: "/scripts/", // 精选脚本
 		},
 		{
 			name: "小游戏",
