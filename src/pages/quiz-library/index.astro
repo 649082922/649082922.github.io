@@ -119,25 +119,49 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 	.cloud-actions .github-action { border-color: #24292f; background: #24292f; color: #fff; }
 	#quiz-cloud-status { grid-column: 1 / -1; min-height: 1.2em; margin: 0; color: var(--primary); font-size: .74rem; }
 	.library-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: clamp(.8rem, 1.6vw, 1.2rem); margin-top: clamp(1.6rem, 3vw, 2.4rem); }
-	.bank-section { margin-top: clamp(1.4rem, 2.6vw, 2rem); }
-	.section-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: .4rem 1rem; margin-bottom: .8rem; }
-	.section-head h2 { margin: 0; font-size: 1.15rem; color: var(--library-text); }
+	.bank-section {
+		margin-top: clamp(1.4rem, 2.6vw, 2rem);
+		padding: clamp(1.1rem, 2vw, 1.5rem);
+		border: 1px solid color-mix(in srgb, var(--primary) 16%, transparent);
+		border-radius: 1.1rem;
+		background: color-mix(in srgb, var(--primary) 2.5%, transparent);
+	}
+	.section-head { display: flex; align-items: baseline; flex-wrap: wrap; gap: .4rem 1rem; margin-bottom: .9rem; padding-bottom: .75rem; border-bottom: 1px dashed color-mix(in srgb, var(--primary) 22%, transparent); }
+	.section-head h2 { margin: 0; font-size: 1.15rem; color: var(--library-text); display: flex; align-items: center; gap: .5rem; }
+	.section-head h2::before { content: ""; width: .28rem; height: 1.05rem; border-radius: .2rem; background: var(--primary); }
 	.section-head span { font-size: .76rem; color: var(--library-muted); }
-	.bank-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); gap: .8rem; }
-	.bank-row { padding: .9rem 1rem; border: 1px solid var(--library-line); border-radius: .8rem; background: color-mix(in srgb, var(--primary) 3%, transparent); display: flex; flex-direction: column; gap: .55rem; }
+	.bank-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 20rem), 1fr)); gap: .9rem; }
+	.bank-row {
+		padding: 1rem 1.1rem;
+		border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent);
+		border-radius: .95rem;
+		background: color-mix(in srgb, var(--card-bg) 92%, var(--primary));
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+		display: flex; flex-direction: column; gap: .6rem;
+		transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+	}
+	.bank-row:hover { transform: translateY(-2px); border-color: var(--primary); box-shadow: 0 8px 20px color-mix(in srgb, var(--primary) 14%, transparent); }
+	:global(.dark) .bank-row { background: rgba(55, 45, 64, 0.92); box-shadow: none; }
 	.bank-row-top { display: flex; align-items: center; justify-content: space-between; gap: .6rem; min-width: 0; }
-	.bank-row-top strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: .95rem; color: var(--library-text); }
+	.bank-row-top strong { display: flex; align-items: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1rem; color: var(--library-text); }
+	.bank-row-top strong::before { content: "📘"; margin-right: .45rem; flex-shrink: 0; }
 	.bank-row small { font-size: .72rem; line-height: 1.5; color: var(--library-muted); }
-	.bank-switch { display: inline-flex; flex-shrink: 0; border: 1px solid var(--library-line); border-radius: .5rem; overflow: hidden; cursor: pointer; background: color-mix(in srgb, var(--primary) 3%, transparent); user-select: none; }
-	.bank-switch span { padding: .3rem .66rem; font-size: .68rem; font-weight: 750; color: var(--library-muted); transition: background .15s ease, color .15s ease; }
+	.bank-switch { display: inline-flex; flex-shrink: 0; border: 1px solid var(--library-line); border-radius: 999px; overflow: hidden; cursor: pointer; background: color-mix(in srgb, var(--primary) 3%, transparent); user-select: none; }
+	.bank-switch span { padding: .3rem .8rem; font-size: .68rem; font-weight: 750; color: var(--library-muted); transition: background .15s ease, color .15s ease; }
 	.bank-switch span.on { background: var(--primary); color: var(--library-on-primary); }
 	.bank-switch:hover span:not(.on) { color: var(--library-text); }
-	.bank-cur { flex-shrink: 0; margin-left: .45rem; padding: .18rem .42rem; border-radius: .35rem; background: color-mix(in srgb, var(--primary) 10%, transparent); color: var(--primary); font-size: .62rem; font-style: normal; font-weight: 750; }
-	.bank-row-actions { display: flex; gap: .5rem; flex-wrap: wrap; }
-	.bank-row-actions button, .bank-row-actions a { border: 1px solid var(--library-line); border-radius: .5rem; padding: .5rem .8rem; background: transparent; color: var(--library-text); cursor: pointer; font-family: inherit; font-size: .72rem; font-weight: 750; line-height: 1; text-decoration: none; }
-	.bank-row-actions .primary-action { border-color: var(--primary); background: var(--primary); color: var(--library-on-primary); font-weight: 850; }
-	.bank-row-actions button:hover, .bank-row-actions a:hover { border-color: var(--primary); }
-	.bank-empty { padding: 1rem; border: 1px dashed var(--library-line); border-radius: .8rem; color: var(--library-muted); font-size: .78rem; }
+	.bank-cur { flex-shrink: 0; margin-left: .45rem; padding: .18rem .45rem; border-radius: .4rem; background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); font-size: .62rem; font-style: normal; font-weight: 750; }
+	.bank-row-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: auto; }
+	.bank-row-actions button, .bank-row-actions a {
+		border: 1px solid var(--library-line); border-radius: .6rem; padding: .58rem 1rem;
+		background: transparent; color: var(--library-text); cursor: pointer; font-family: inherit;
+		font-size: .74rem; font-weight: 750; line-height: 1; text-decoration: none;
+		transition: border-color .15s ease, color .15s ease, filter .15s ease;
+	}
+	.bank-row-actions .primary-action { flex: 1; border-color: var(--primary); background: var(--primary); color: var(--library-on-primary); font-weight: 850; }
+	.bank-row-actions .primary-action:hover { filter: brightness(1.08); }
+	.bank-row-actions button:not(.primary-action):hover, .bank-row-actions a:not(.primary-action):hover { border-color: #d95b65; color: #d95b65; }
+	.bank-empty { padding: 1.1rem; border: 1px dashed var(--library-line); border-radius: .95rem; color: var(--library-muted); font-size: .78rem; text-align: center; }
 	.bank-card { min-height: 15rem; padding: clamp(1.2rem, 2.2vw, 1.8rem); border: 1px solid var(--library-line); border-radius: 1rem; background: color-mix(in srgb, var(--card-bg) 94%, var(--primary)); color: var(--library-text); text-align: left; cursor: pointer; display: flex; flex-direction: column; font: inherit; transition: transform 160ms ease, border-color 160ms ease, background 160ms ease; }
 	:global(.dark) .bank-card { background: rgba(55, 45, 64, 0.94); }
 	.bank-card:hover { transform: translateY(-2px); border-color: var(--primary); background: color-mix(in srgb, var(--primary) 6%, var(--card-bg)); }
