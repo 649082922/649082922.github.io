@@ -47,7 +47,7 @@ export default defineConfig({
 			updateBodyClass: false,
 			globalInstance: true,
 			// 重交互页不走 Swup 局部替换：整页加载保证登录态/事件绑定/公开题库每次全新初始化
-			ignores: [/\/quiz-library\//, /\/quiz\//, /\/games\//],
+			ignore: [/\/quiz-library\//, /\/quiz\//, /\/games\//],
 		}),
 		icon({
 			include: {
