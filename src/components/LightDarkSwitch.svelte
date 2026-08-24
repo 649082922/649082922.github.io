@@ -13,6 +13,8 @@ import type { LIGHT_DARK_MODE } from "@/types/config.ts";
 
 const seq: LIGHT_DARK_MODE[] = [LIGHT_MODE, DARK_MODE, AUTO_MODE];
 let mode: LIGHT_DARK_MODE = $state(AUTO_MODE);
+// 接受任意属性以兼容 astro client:* 指令的类型检查（组件本身不消费 props）
+let _props: { [key: string]: unknown } = $props();
 
 onMount(() => {
 	mode = getStoredTheme();
