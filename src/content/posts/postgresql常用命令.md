@@ -1,7 +1,7 @@
 ---
 title: postgresql常用命令
 published: 2024-02-25
-description: "\dt schema_name.*"
+description: "dt schema_name.*"
 tags: ["PostgreSQL", "实战笔记"]
 category: 数据库
 draft: false
