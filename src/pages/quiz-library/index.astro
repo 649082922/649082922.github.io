@@ -91,7 +91,7 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		background: var(--card-bg);
 		color: var(--library-text);
 	}
-	:global(.dark) .library-page {
+	.dark .library-page {
 		--library-text: #fffaf7;
 		--library-muted: #ded3dc;
 		--library-subtle: #c5b9c6;
@@ -141,10 +141,9 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
 	}
 	.bank-row:hover { transform: translateY(-2px); border-color: var(--primary); box-shadow: 0 8px 20px color-mix(in srgb, var(--primary) 14%, transparent); }
-	:global(.dark) .bank-row { background: rgba(55, 45, 64, 0.92); box-shadow: none; }
+	.dark .bank-row { background: rgba(55, 45, 64, 0.92); box-shadow: none; }
 	.bank-row-top { display: flex; align-items: center; justify-content: space-between; gap: .6rem; min-width: 0; }
 	.bank-row-top strong { display: flex; align-items: center; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 1rem; color: var(--library-text); }
-	.bank-row-top strong::before { content: "📘"; margin-right: .45rem; flex-shrink: 0; }
 	.bank-row small { font-size: .72rem; line-height: 1.5; color: var(--library-muted); }
 	.bank-switch {
 		display: inline-flex; flex-shrink: 0;
@@ -156,8 +155,6 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 	}
 	.bank-switch:hover { border-color: var(--primary); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent); }
 	.bank-switch span { padding: .32rem .8rem; font-size: .68rem; font-weight: 750; color: var(--library-muted); transition: background .15s ease, color .15s ease; }
-	.bank-switch span:nth-child(1)::before { content: "🔒 "; font-size: .62rem; }
-	.bank-switch span:nth-child(2)::before { content: "🌐 "; font-size: .62rem; }
 	.bank-switch span.on { background: var(--primary); color: var(--library-on-primary); }
 	.bank-switch:hover span:not(.on) { color: var(--library-text); }
 	.bank-cur { flex-shrink: 0; margin-left: .45rem; padding: .18rem .45rem; border-radius: .4rem; background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); font-size: .62rem; font-style: normal; font-weight: 750; }
@@ -173,9 +170,9 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 	.bank-row-actions button:not(.primary-action):hover, .bank-row-actions a:not(.primary-action):hover { border-color: #d95b65; color: #d95b65; }
 	.bank-empty { padding: 1.1rem; border: 1px dashed var(--library-line); border-radius: .95rem; color: var(--library-muted); font-size: .78rem; text-align: center; }
 	.bank-card { min-height: 15rem; padding: clamp(1.2rem, 2.2vw, 1.8rem); border: 1px solid var(--library-line); border-radius: 1rem; background: color-mix(in srgb, var(--card-bg) 94%, var(--primary)); color: var(--library-text); text-align: left; cursor: pointer; display: flex; flex-direction: column; font: inherit; transition: transform 160ms ease, border-color 160ms ease, background 160ms ease; }
-	:global(.dark) .bank-card { background: rgba(55, 45, 64, 0.94); }
+	.dark .bank-card { background: rgba(55, 45, 64, 0.94); }
 	.bank-card:hover { transform: translateY(-2px); border-color: var(--primary); background: color-mix(in srgb, var(--primary) 6%, var(--card-bg)); }
-	:global(.dark) .bank-card:hover { background: rgba(64, 51, 72, 0.98); }
+	.dark .bank-card:hover { background: rgba(64, 51, 72, 0.98); }
 	.bank-card.current { cursor: default; }
 	.bank-tag { width: max-content; padding: .34rem .58rem; border-radius: .4rem; background: color-mix(in srgb, var(--primary) 13%, transparent); color: var(--primary); font-size: .68rem; font-weight: 800; }
 	.bank-card strong { margin-top: 1.25rem; font-size: clamp(1.2rem, 2vw, 1.5rem); color: var(--library-text); }
@@ -199,7 +196,7 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 	.format-note strong { display: block; font-size: .82rem; color: var(--library-text); }
 	.format-note span { display: block; margin-top: .32rem; font-size: .74rem; line-height: 1.55; color: var(--library-muted); }
 	.example-row { display: grid; grid-template-columns: auto minmax(8rem, 1fr) minmax(11rem, 1.5fr) auto; gap: .6rem; align-items: center; padding: .65rem .75rem; border-radius: .55rem; background: rgba(128,120,112,.08); color: var(--library-muted); font-size: .7rem; }
-	:global(.dark) .example-row { background: rgba(255, 255, 255, 0.07); }
+	.dark .example-row { background: rgba(255, 255, 255, 0.07); }
 	.example-row span { margin: 0; }
 	.example-row code { color: var(--library-muted); line-height: 1.45; }
 	.upload-progress { position: relative; overflow: hidden; margin-top: 1rem; padding: .78rem .9rem; border: 1px solid var(--library-line); border-radius: .65rem; color: var(--library-muted); font-size: .78rem; }
@@ -379,7 +376,7 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		if (cloudUser) cloudUser.textContent = user ? `${identity} · 云同步已开启` : "尚未登录";
 		if (cloudDescription) cloudDescription.textContent = user
 			? "上传即存云端，换设备登录同一账号继续刷。"
-			: "点右上角 👤 图标登录 GitHub 后可云端保存多份题库。";
+			: "点右上角人像图标登录 GitHub 后可云端保存多份题库。";
 		if (logoutButton) logoutButton.hidden = !user;
 	}
 
@@ -411,7 +408,7 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 			}
 			await supabase.auth.signOut().catch(() => {});
 			renderCloudUser(null);
-			setCloudStatus(`${prefix}：登录凭证已过期，已自动清理，请点右上角 👤 重新登录。`, true);
+			setCloudStatus(`${prefix}：登录凭证已过期，已自动清理，请点右上角人像图标重新登录。`, true);
 			return;
 		}
 		setCloudStatus(`${prefix}：${describeCloudError(error)}`, true);

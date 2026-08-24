@@ -6,7 +6,7 @@
 	</div>
 
 	<div class="cloud-actions" id="cloud-actions">
-		<p class="cloud-hint">点击右上角 <strong>👤 图标</strong> 登录 GitHub，即可开启云存档。</p>
+		<p class="cloud-hint">点击右上角 <strong>人像图标</strong> 登录 GitHub，即可开启云存档。</p>
 	</div>
 
 	<div class="user-panel" id="user-panel" hidden>
@@ -133,7 +133,7 @@
 		if (actions) actions.hidden = Boolean(user);
 		if (userPanel) userPanel.hidden = !user;
 		if (identity) identity.textContent = user?.email ?? user?.user_metadata?.user_name ?? "已登录用户";
-		if (description) description.textContent = user ? "本地存档仍然保留；可手动上传到云端，并在其他设备恢复。" : "点击右上角 👤 图标登录后可上传云端存档。";
+		if (description) description.textContent = user ? "本地存档仍然保留；可手动上传到云端，并在其他设备恢复。" : "点击右上角人像图标登录后可上传云端存档。";
 	}
 
 	function auditLoginOnce(user: User) {
