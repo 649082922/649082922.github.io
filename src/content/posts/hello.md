@@ -1,6 +1,6 @@
 ---
 title: 博客开张，记录数据库运维的折腾日常
-published: 2025-06-01
+published: 2025-10-31
 description: "你好，这里是勇敢DBA不怕困难的博客。"
 tags: ["公告", "数据库"]
 category: 随笔
