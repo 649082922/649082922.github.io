@@ -461,15 +461,17 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		try {
 			const banks = await listPublicQuizBanks();
 			if (seq !== publicBanksSeq) return; // 已有更新的请求在跑，丢弃本次结果
+			// 成功响应（包括空列表）一律以服务器为准：题库转私有后立即从列表消失
 			if (!banks.length) {
-				// 空响应可能是网络抖动，保留已有缓存与展示，避免区块时隐时现
-				if (!cached.length && !list.children.length) section.hidden = true;
+				localStorage.removeItem("quiz-public-banks-cache");
+				section.hidden = true;
 				return;
 			}
 			localStorage.setItem("quiz-public-banks-cache", JSON.stringify(banks));
 			section.hidden = false;
 			fillPublicList(banks);
 		} catch {
+			// 仅网络失败才容忍旧缓存降级展示，避免区块时隐时现
 			if (seq !== publicBanksSeq) return;
 			if (!cached.length && !list.children.length) section.hidden = true;
 		}
