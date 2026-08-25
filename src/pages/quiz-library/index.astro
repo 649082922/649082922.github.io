@@ -468,6 +468,7 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 			// 成功响应（包括空列表）一律以服务器为准：题库转私有后立即从列表消失
 			if (!banks.length) {
 				localStorage.removeItem("quiz-public-banks-cache");
+				fillPublicList([]);
 				section.hidden = true;
 				return;
 			}
