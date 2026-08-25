@@ -222,7 +222,7 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 </style>
 
 <script>
-	import { isCloudConfigured, supabase, writeAudit } from "@/lib/game-cloud";
+	import { getFreshUser, isCloudConfigured, supabase, writeAudit } from "@/lib/game-cloud";
 	import {
 		deleteQuizBank,
 		fetchQuizBank,
@@ -644,9 +644,8 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		setCloudStatus("当前仅保存在这个浏览器。", true);
 	} else {
 		void renderPublicBanks();
-		// getSession 本地恢复登录态（无网络往返）；token 失效由列表查询的 401 自愈逻辑兜底
-		const { data } = await supabase.auth.getSession();
-		const user = data.session?.user ?? null;
+		// 本地恢复登录态；token 过期/临期时先同步续期，避免首屏查询必然失败
+		const user = await getFreshUser(supabase);
 		renderCloudUser(user);
 		if (user) {
 			if (!sessionStorage.getItem("game-login-audited")) {

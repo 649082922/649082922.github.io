@@ -107,6 +107,7 @@
 
 <script>
 	import {
+		getFreshUser,
 		isCloudConfigured,
 		restoreCloudSave,
 		supabase,
@@ -147,8 +148,7 @@
 		if (actions) actions.hidden = true;
 		setStatus("当前仅使用浏览器本地存档。");
 	} else {
-		const { data } = await supabase.auth.getSession();
-		const initialUser = data.session?.user ?? null;
+		const initialUser = await getFreshUser(supabase);
 		renderUser(initialUser);
 		if (initialUser) auditLoginOnce(initialUser);
 		supabase.auth.onAuthStateChange((event, session) => {

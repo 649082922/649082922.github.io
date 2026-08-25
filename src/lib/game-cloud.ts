@@ -30,6 +30,23 @@ function createCloudClient(): SupabaseClient | null {
 
 export const supabase = createCloudClient();
 
+/**
+ * 本地恢复登录用户；token 已过期或 30 秒内临期时，同步等待一次续期再返回。
+ * 否则首屏会拿着过期 token 去查云端数据（首次失败、刷新后才正常）。
+ * 续期失败（网络断/refresh token 失效）时保留本地会话，交给后续查询的错误处理兜底。
+ */
+export async function getFreshUser(
+	client: SupabaseClient,
+): Promise<User | null> {
+	const { data } = await client.auth.getSession();
+	const session = data.session;
+	if (!session) return null;
+	const expiresAt = (session.expires_at ?? 0) * 1000;
+	if (expiresAt > Date.now() + 30_000) return session.user;
+	const refreshed = await client.auth.refreshSession().catch(() => null);
+	return refreshed?.data.session?.user ?? session.user;
+}
+
 export function collectLocalSaves(): Record<string, unknown> {
 	const payload: Record<string, unknown> = {};
 	for (const [gameId, game] of Object.entries(GAME_SAVES)) {

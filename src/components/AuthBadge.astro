@@ -27,7 +27,7 @@ const cloudReady = Boolean(
 </div>
 )}
 <script>
-	import { supabase } from "@/lib/game-cloud";
+	import { getFreshUser, supabase } from "@/lib/game-cloud";
 
 	const badge = document.getElementById("auth-badge");
 	const panel = document.getElementById("auth-panel");
@@ -63,7 +63,7 @@ const cloudReady = Boolean(
 			render(user?.email ?? null, meta?.user_name ?? meta?.full_name ?? null);
 		};
 
-		void sb.auth.getSession().then(({ data }) => applyUser(data.session?.user ?? null));
+		void getFreshUser(sb).then(applyUser);
 		sb.auth.onAuthStateChange((event, session) => {
 			applyUser(session?.user ?? null);
 			if (event === "SIGNED_IN") setBusy("登录成功，全站生效。");
