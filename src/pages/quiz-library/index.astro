@@ -449,18 +449,22 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		if (!isCloudConfigured || !supabase) { section.hidden = true; return; }
 		let cached: unknown[] = [];
 		try { cached = JSON.parse(localStorage.getItem("quiz-public-banks-cache") || "[]") ?? []; } catch { cached = []; }
-		if (Array.isArray(cached) && cached.length) {
-			fillPublicList(cached as never[]);
+		// 纵深防御：渲染层只放行明确公开的条目，旧缓存/手改数据里的私有项不展示
+		const visibleCached = Array.isArray(cached)
+			? cached.filter((item) => (item as { isPublic?: boolean })?.isPublic !== false)
+			: [];
+		if (visibleCached.length) {
+			fillPublicList(visibleCached as never[]);
 			section.hidden = false;
 		}
-		// 节流：20 秒内已刷新过就不再发请求，快速切页不产生请求风暴
+		// 节流：20 秒内已成功刷新过就不再发请求，快速切页不产生请求风暴；失败不占用窗口
 		const now = Date.now();
 		if (!force && publicBanksFetchedAt && now - publicBanksFetchedAt < 20_000) return;
-		publicBanksFetchedAt = now;
 		const seq = ++publicBanksSeq;
 		try {
 			const banks = await listPublicQuizBanks();
 			if (seq !== publicBanksSeq) return; // 已有更新的请求在跑，丢弃本次结果
+			publicBanksFetchedAt = Date.now();
 			// 成功响应（包括空列表）一律以服务器为准：题库转私有后立即从列表消失
 			if (!banks.length) {
 				localStorage.removeItem("quiz-public-banks-cache");

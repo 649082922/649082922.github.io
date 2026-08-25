@@ -42,22 +42,27 @@ create index if not exists quiz_banks_public_idx on public.quiz_banks (is_public
 
 alter table public.quiz_banks enable row level security;
 
+-- 幂等：先清旧策略再建，保证线上收敛到本文件定义（防历史宽策略残留）
+drop policy if exists "read own or public quiz banks" on public.quiz_banks;
 create policy "read own or public quiz banks"
 on public.quiz_banks for select
 to authenticated, anon
 using (is_public or (select auth.uid()) = user_id);
 
+drop policy if exists "insert own quiz banks" on public.quiz_banks;
 create policy "insert own quiz banks"
 on public.quiz_banks for insert
 to authenticated
 with check ((select auth.uid()) = user_id);
 
+drop policy if exists "update own quiz banks" on public.quiz_banks;
 create policy "update own quiz banks"
 on public.quiz_banks for update
 to authenticated
 using ((select auth.uid()) = user_id)
 with check ((select auth.uid()) = user_id);
 
+drop policy if exists "delete own quiz banks" on public.quiz_banks;
 create policy "delete own quiz banks"
 on public.quiz_banks for delete
 to authenticated

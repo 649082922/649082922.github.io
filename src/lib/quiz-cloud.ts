@@ -130,12 +130,16 @@ export async function saveQuizBank(
 		updated_at: updatedAt,
 	};
 	if (input.id) {
-		const { error } = await client
+		const { data, error } = await client
 			.from("quiz_banks")
 			.update(row)
 			.eq("id", input.id)
-			.eq("user_id", user.id);
+			.eq("user_id", user.id)
+			.select("id")
+			.maybeSingle();
 		if (error) throw toCloudError(error);
+		// 零行更新（RLS 拒绝/属主不符）不能当成功，否则旧数据被当作已保存
+		if (!data) throw new Error("题库不存在或不属于当前账号，未能保存");
 		return input.id;
 	}
 	const { data, error } = await client
@@ -154,12 +158,16 @@ export async function setQuizBankPublic(
 	isPublic: boolean,
 ): Promise<void> {
 	const client = requireClient();
-	const { error } = await client
+	// RLS 拒绝时 UPDATE 是"零行受影响 + 无错误"的静默跳过，必须取回行确认真的更新了
+	const { data, error } = await client
 		.from("quiz_banks")
 		.update({ is_public: isPublic, updated_at: new Date().toISOString() })
 		.eq("id", id)
-		.eq("user_id", user.id);
+		.eq("user_id", user.id)
+		.select("id")
+		.maybeSingle();
 	if (error) throw toCloudError(error);
+	if (!data) throw new Error("题库不存在或不属于当前账号，未能更新公开状态");
 }
 
 /** 删除自己的一份题库。 */
