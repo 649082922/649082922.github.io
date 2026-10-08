@@ -38,11 +38,18 @@ create table if not exists public.quiz_banks (
 );
 
 create index if not exists quiz_banks_user_idx on public.quiz_banks (user_id);
-create index if not exists quiz_banks_public_idx on public.quiz_banks (is_public) where is_public;
+drop index if exists quiz_banks_public_idx;
+create index quiz_banks_public_idx on public.quiz_banks (updated_at desc) where is_public;
 
 alter table public.quiz_banks enable row level security;
 
 -- 幂等：先清旧策略再建，保证线上收敛到本文件定义（防历史宽策略残留）
+-- 含 20260814120000 的旧 visibility 策略：代码只维护 is_public，
+-- visibility 残留 'public' 会让"私有"题库对登录用户仍可读（RLS 为 OR 语义）。
+drop policy if exists "read quiz banks" on public.quiz_banks;
+drop policy if exists "create own quiz bank" on public.quiz_banks;
+drop policy if exists "update own quiz bank" on public.quiz_banks;
+drop policy if exists "delete own quiz bank" on public.quiz_banks;
 drop policy if exists "read own or public quiz banks" on public.quiz_banks;
 create policy "read own or public quiz banks"
 on public.quiz_banks for select
@@ -67,6 +74,47 @@ create policy "delete own quiz banks"
 on public.quiz_banks for delete
 to authenticated
 using ((select auth.uid()) = user_id);
+
+-- 题库反馈：登录用户可对"自己的或公开的"题库提反馈；
+-- 反馈内容仅反馈者本人与题库属主可见。
+create table if not exists public.quiz_feedback (
+  id uuid primary key default gen_random_uuid(),
+  bank_id uuid not null references public.quiz_banks(id) on delete cascade,
+  question_type text not null check (question_type in ('single','multiple','judge')),
+  question_index int not null check (question_index >= 0),
+  content text not null check (char_length(content) between 1 and 2000),
+  reporter_id uuid not null references auth.users(id),
+  created_at timestamptz not null default now()
+);
+
+create index if not exists quiz_feedback_bank_idx on public.quiz_feedback (bank_id);
+
+alter table public.quiz_feedback enable row level security;
+
+drop policy if exists "insert quiz feedback" on public.quiz_feedback;
+create policy "insert quiz feedback"
+on public.quiz_feedback for insert
+to authenticated
+with check (
+  reporter_id = (select auth.uid())
+  and exists (
+    select 1 from public.quiz_banks b
+    where b.id = bank_id
+      and (b.user_id = (select auth.uid()) or b.is_public)
+  )
+);
+
+drop policy if exists "read quiz feedback" on public.quiz_feedback;
+create policy "read quiz feedback"
+on public.quiz_feedback for select
+to authenticated
+using (
+  reporter_id = (select auth.uid())
+  or exists (
+    select 1 from public.quiz_banks b
+    where b.id = bank_id and b.user_id = (select auth.uid())
+  )
+);
 
 create table if not exists public.site_admins (
   user_id uuid primary key references auth.users(id) on delete cascade,
