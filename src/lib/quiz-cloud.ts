@@ -19,6 +19,7 @@ export type QuizBankMeta = {
 	name: string;
 	ownerName: string;
 	isPublic: boolean;
+	hasPassword: boolean;
 	updatedAt: string;
 };
 
@@ -53,6 +54,7 @@ function toMeta(row: {
 	name: string;
 	owner_name: string | null;
 	is_public: boolean | null;
+	password_hash?: string | null;
 	updated_at: string;
 }): QuizBankMeta {
 	return {
@@ -60,8 +62,15 @@ function toMeta(row: {
 		name: row.name,
 		ownerName: row.owner_name ?? "",
 		isPublic: Boolean(row.is_public),
+		hasPassword: row.password_hash != null,
 		updatedAt: row.updated_at,
 	};
+}
+
+/** 迁移 20261120120000 未执行时，查询带密码列/视图会报错，按旧 schema 回退。 */
+function isMissingPasswordSchema(error: unknown): boolean {
+	const code = (error as { code?: string })?.code;
+	return code === "42703" /* undefined_column */ || code === "PGRST205"; /* schemaCacheMiss */
 }
 
 /** 登录者自己的全部题库（按更新时间倒序）。 */
@@ -69,9 +78,19 @@ export async function listMyQuizBanks(user: User): Promise<QuizBankMeta[]> {
 	const client = requireClient();
 	const { data, error } = await client
 		.from("quiz_banks")
-		.select("id, name, owner_name, is_public, updated_at")
+		.select("id, name, owner_name, is_public, password_hash, updated_at")
 		.eq("user_id", user.id)
 		.order("updated_at", { ascending: false });
+	if (error && isMissingPasswordSchema(error)) {
+		// 云端还没跑密码迁移：退回无密码列的查询，hasPassword 全部为 false
+		const fallback = await client
+			.from("quiz_banks")
+			.select("id, name, owner_name, is_public, updated_at")
+			.eq("user_id", user.id)
+			.order("updated_at", { ascending: false });
+		if (fallback.error) throw toCloudError(fallback.error);
+		return (fallback.data ?? []).map(toMeta);
+	}
 	if (error) throw toCloudError(error);
 	return (data ?? []).map(toMeta);
 }
@@ -79,14 +98,32 @@ export async function listMyQuizBanks(user: User): Promise<QuizBankMeta[]> {
 /** 公开题库（任何人可见，未登录 anon 也可读），按更新时间倒序。 */
 export async function listPublicQuizBanks(): Promise<QuizBankMeta[]> {
 	const client = requireClient();
+	// 优先读元数据视图：有密码的公开题库只暴露名字/作者/🔒，不暴露题目内容
 	const { data, error } = await client
-		.from("quiz_banks")
-		.select("id, name, owner_name, is_public, updated_at")
-		.eq("is_public", true)
+		.from("quiz_bank_meta")
+		.select("id, name, owner_name, has_password, updated_at")
 		.order("updated_at", { ascending: false })
 		.limit(60);
+	if (error && isMissingPasswordSchema(error)) {
+		// 云端还没跑密码迁移：按旧 schema 直查表（此时全部公开题库无密码）
+		const fallback = await client
+			.from("quiz_banks")
+			.select("id, name, owner_name, is_public, updated_at")
+			.eq("is_public", true)
+			.order("updated_at", { ascending: false })
+			.limit(60);
+		if (fallback.error) throw toCloudError(fallback.error);
+		return (fallback.data ?? []).map(toMeta);
+	}
 	if (error) throw toCloudError(error);
-	return (data ?? []).map(toMeta);
+	return (data ?? []).map((row: { id: string; name: string; owner_name: string | null; has_password: boolean | null; updated_at: string }) => ({
+		id: row.id,
+		name: row.name,
+		ownerName: row.owner_name ?? "",
+		isPublic: true,
+		hasPassword: Boolean(row.has_password),
+		updatedAt: row.updated_at,
+	}));
 }
 
 /** 按 id 取题库全文。RLS 保证只能拿到公开的或自己的；查不到返回 null。 */
@@ -179,4 +216,42 @@ export async function deleteQuizBank(user: User, id: string): Promise<void> {
 		.eq("id", id)
 		.eq("user_id", user.id);
 	if (error) throw toCloudError(error);
+}
+
+/** 云端密码迁移未执行时统一给出的提示。 */
+export const QUIZ_PASSWORD_NOT_READY = "云端尚未启用题库密码：请先在 Supabase 执行 20261120120000_quiz_bank_password.sql 迁移";
+
+/** 凭密码打开（有密码的）公开题库；属主在 RPC 内自动放行。密码错误返回 null。 */
+export async function openQuizBankWithPassword(
+	id: string,
+	password: string,
+): Promise<QuizBank | null> {
+	const client = requireClient();
+	const { data, error } = await client.rpc("open_quiz_bank", {
+		p_id: id,
+		p_password: password,
+	});
+	if (error) {
+		if ((error as { code?: string }).code === "PGRST202") throw new Error(QUIZ_PASSWORD_NOT_READY);
+		throw toCloudError(error);
+	}
+	const rows = (data ?? []) as { bank?: QuizBank }[];
+	return rows[0]?.bank ?? null;
+}
+
+/** 属主设置/清除题库密码（password 传空字符串 = 清除）。RPC 内部校验属主。 */
+export async function setQuizBankPassword(
+	id: string,
+	password: string,
+): Promise<void> {
+	const client = requireClient();
+	const { data, error } = await client.rpc("set_quiz_bank_password", {
+		p_id: id,
+		p_password: password,
+	});
+	if (error) {
+		if ((error as { code?: string }).code === "PGRST202") throw new Error(QUIZ_PASSWORD_NOT_READY);
+		throw toCloudError(error);
+	}
+	if (data !== true) throw new Error("题库不存在或不属于当前账号，未能设置密码");
 }

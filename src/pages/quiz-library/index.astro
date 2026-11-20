@@ -155,6 +155,13 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 	.bank-switch span.on { background: var(--primary); color: var(--library-on-primary); }
 	.bank-switch:hover span:not(.on) { color: var(--library-text); }
 	.bank-cur { flex-shrink: 0; margin-left: .45rem; padding: .18rem .45rem; border-radius: .4rem; background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); font-size: .62rem; font-style: normal; font-weight: 750; }
+	.bank-lock { flex-shrink: 0; margin-left: .45rem; padding: .18rem .5rem; border: 1px solid var(--library-line); border-radius: .4rem; color: var(--library-muted); font-size: .62rem; font-style: normal; font-weight: 750; }
+	.bank-pwd { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: .45rem; align-items: center; margin-top: .7rem; }
+	.bank-pwd input { min-width: 0; height: 2.75rem; padding: 0 .8rem; border: 1px solid var(--library-line); border-radius: .6rem; background: var(--surface-solid); color: var(--library-text); font-family: inherit; font-size: .84rem; }
+	.bank-pwd input:focus-visible { outline: 2px solid var(--focus-ring); outline-offset: 1px; }
+	.bank-pwd button { min-height: 2.75rem; padding: 0 .9rem; border: 1px solid var(--library-line); border-radius: .6rem; background: transparent; color: var(--library-muted); font-family: inherit; font-size: .78rem; font-weight: 750; cursor: pointer; }
+	.bank-pwd .primary-action { border: 0; background: var(--primary); color: var(--library-on-primary); }
+	.bank-pwd-error { grid-column: 1 / -1; margin: 0; color: var(--danger); font-size: .74rem; }
 	.bank-row-actions { display: flex; gap: .5rem; flex-wrap: wrap; margin-top: auto; }
 	.bank-row-actions button, .bank-row-actions a {
 		border: 1px solid color-mix(in srgb, var(--primary) 22%, transparent); border-radius: .6rem; padding: .58rem 1rem;
@@ -224,7 +231,9 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		fetchQuizBank,
 		listMyQuizBanks,
 		listPublicQuizBanks,
+		openQuizBankWithPassword,
 		saveQuizBank,
+		setQuizBankPassword,
 		setQuizBankPublic,
 	} from "@/lib/quiz-cloud";
 	import type { QuizBank, QuizType } from "@/lib/quiz-cloud";
@@ -421,12 +430,12 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 	}
 
 	// 渲染「公开题库」区：先显示上次缓存，后台刷新最新；出错且有缓存时保留缓存
-	function fillPublicList(banks: { id: string; name: string; ownerName: string; updatedAt: string }[]) {
+	function fillPublicList(banks: { id: string; name: string; ownerName: string; updatedAt: string; hasPassword?: boolean }[]) {
 		const list = byId<HTMLElement>("public-bank-list");
 		if (!list) return;
 		list.innerHTML = banks.map((meta) => `
-			<div class="bank-row">
-				<div class="bank-row-top"><strong title="${escapeHtml(meta.name)}">${escapeHtml(meta.name)}</strong></div>
+			<div class="bank-row" data-locked="${meta.hasPassword ? "1" : "0"}">
+				<div class="bank-row-top"><strong title="${escapeHtml(meta.name)}">${escapeHtml(meta.name)}</strong>${meta.hasPassword ? '<i class="bank-lock">需密码</i>' : ""}</div>
 				<small>${meta.ownerName ? `${escapeHtml(meta.ownerName)} · ` : ""}${fmtTime(meta.updatedAt)}</small>
 				<div class="bank-row-actions">
 					<button type="button" class="primary-action" data-action="open" data-id="${meta.id}" data-name="${escapeHtml(meta.name)}">刷题</button>
@@ -496,7 +505,7 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 			list.innerHTML = banks.map((meta) => `
 				<div class="bank-row">
 					<div class="bank-row-top">
-						<strong title="${escapeHtml(meta.name)}">${escapeHtml(meta.name)}${meta.id === activeId ? '<i class="bank-cur">当前</i>' : ""}</strong>
+						<strong title="${escapeHtml(meta.name)}">${escapeHtml(meta.name)}${meta.id === activeId ? '<i class="bank-cur">当前</i>' : ""}${meta.hasPassword ? '<i class="bank-lock">需密码</i>' : ""}</strong>
 						<div class="bank-switch" role="switch" aria-checked="${meta.isPublic ? "true" : "false"}" aria-label="公开或私有" title="点击切换 公开 / 私有" data-action="toggle-public" data-id="${meta.id}" data-pub="${meta.isPublic ? "1" : "0"}">
 							<span class="${meta.isPublic ? "" : "on"}">私有</span><span class="${meta.isPublic ? "on" : ""}">公开</span>
 						</div>
@@ -504,6 +513,7 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 					<small>${fmtTime(meta.updatedAt)}</small>
 					<div class="bank-row-actions">
 						<button type="button" class="primary-action" data-action="open" data-id="${meta.id}" data-name="${escapeHtml(meta.name)}">刷题</button>
+						<button type="button" data-action="password" data-id="${meta.id}" data-name="${escapeHtml(meta.name)}" data-has-pwd="${meta.hasPassword ? "1" : "0"}">密码</button>
 						<button type="button" data-action="delete" data-id="${meta.id}" data-name="${escapeHtml(meta.name)}">删除</button>
 					</div>
 				</div>`).join("");
@@ -513,26 +523,106 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		}
 	}
 
-	// 加载一份云端题库到本地并进入答题
-	async function openCloudBank(id: string, fallbackName: string) {
+	// 加载一份云端题库到本地并进入答题；带 password 时走 RPC（有密码的公开题库）
+	async function openCloudBank(id: string, fallbackName: string, password?: string) {
 		try {
+			if (password !== undefined) {
+				setCloudStatus("正在验证密码…");
+				const bank = await openQuizBankWithPassword(id, password);
+				if (!bank) { showPasswordError(id, "密码不正确，再试一次。"); setCloudStatus("密码不正确。", true); return; }
+				saveLocalBank(bank, fallbackName || "我的题库", new Date().toISOString(), id);
+				setCloudStatus(`已加载「${fallbackName}」，进入答题…`);
+				window.setTimeout(() => { window.location.href = "/quiz/"; }, 400);
+				return;
+			}
 			setCloudStatus("正在加载题库…");
 			const cloud = await fetchQuizBank(id);
-			if (!cloud) { setCloudStatus("题库不存在或未公开。", true); return; }
+			if (!cloud) {
+				// 公开列表缓存未刷新时可能点到已加密/已转私有的题库
+				setCloudStatus("题库不存在、已转私有或需要密码。刷新页面可更新列表。", true);
+				void renderPublicBanks(true);
+				return;
+			}
 			saveLocalBank(cloud.bank, cloud.name || fallbackName || "我的题库", cloud.updatedAt, cloud.id);
 			setCloudStatus(`已加载「${cloud.name}」，进入答题…`);
 			window.setTimeout(() => { window.location.href = "/quiz/"; }, 400);
 		} catch (error) { await handleCloudFailure("题库加载失败", error); }
 	}
 
-	async function togglePublicBank(id: string, isPublic: boolean) {
+	// 在指定题库行下方展开行内密码输入（点「刷题」且行带 data-locked="1" 时）
+	function expandPasswordForm(row: HTMLElement | null, id: string, name: string) {
+		if (!row) return;
+		const existing = row.querySelector<HTMLElement>(".bank-pwd");
+		if (existing) { existing.querySelector<HTMLInputElement>("input")?.focus(); return; }
+		const form = document.createElement("form");
+		form.className = "bank-pwd";
+		form.innerHTML = `
+			<input type="password" name="pwd" placeholder="输入题库密码" maxlength="64" autocomplete="off" aria-label="题库密码" />
+			<button type="submit" class="primary-action">进入</button>
+			<button type="button" data-action="pwd-cancel">取消</button>
+			<p class="bank-pwd-error" aria-live="polite"></p>`;
+		form.addEventListener("submit", (event) => {
+			event.preventDefault();
+			const input = form.querySelector<HTMLInputElement>("input");
+			const value = input?.value.trim() ?? "";
+			if (!value) { input?.focus(); return; }
+			void openCloudBank(id, name, value);
+		});
+		row.appendChild(form);
+		form.querySelector<HTMLInputElement>("input")?.focus();
+	}
+
+	function bankRowById(id: string): HTMLElement | null {
+		// data-id 在「刷题」按钮上，要从按钮回溯到所在行
+		return document
+			.querySelector<HTMLElement>(`[data-action="open"][data-id="${CSS.escape(id)}"]`)
+			?.closest<HTMLElement>(".bank-row") ?? null;
+	}
+
+	function showPasswordError(id: string, message: string) {
+		const error = bankRowById(id)?.querySelector<HTMLElement>(".bank-pwd-error");
+		if (error) error.textContent = message;
+	}
+
+	function removePasswordForm(id: string) {
+		bankRowById(id)?.querySelector(".bank-pwd")?.remove();
+	}
+
+	async function togglePublicBank(id: string, isPublic: boolean, hasPassword = false) {
 		if (!currentUser) return;
 		try {
+			// 公开前引导设密码：私有状态下先设好密码，避免公开瞬间无密码裸奔
+			if (isPublic && !hasPassword) {
+				if (window.confirm("要为这个公开题库设置密码吗？\n\n设置后别人需要输入密码才能进入；不设置则任何人可直接刷题。")) {
+					const pwd = window.prompt("输入题库密码（留空 = 不设密码）：");
+					if (pwd === null) return; // 取消 = 放弃本次公开切换
+					if (pwd.trim()) {
+						await setQuizBankPassword(id, pwd.trim());
+						setCloudStatus("密码已设置，正在公开…");
+					}
+				}
+			}
 			await setQuizBankPublic(currentUser, id, isPublic);
 			setCloudStatus(isPublic ? "已公开，别人不登录也能刷。" : "已转为私有。");
 			await renderMyBanks(currentUser);
 			void renderPublicBanks(true);
 		} catch (error) { await handleCloudFailure("公开状态修改失败", error); }
+	}
+
+	// 属主设置/更换/清除密码：留空确定=清除，取消=不动
+	async function changeBankPassword(id: string, name: string, hasPassword: boolean) {
+		if (!currentUser) return;
+		const pwd = window.prompt(
+			`「${name}」的密码\n\n输入新密码后确定 = ${hasPassword ? "更换" : "设置"}密码\n留空直接确定 = ${hasPassword ? "清除密码" : "不设密码"}\n点取消 = 不修改`,
+		);
+		if (pwd === null) return;
+		try {
+			setCloudStatus("正在保存密码…");
+			await setQuizBankPassword(id, pwd.trim());
+			setCloudStatus(pwd.trim() ? `「${name}」已${hasPassword ? "更换" : "设置"}密码。` : `「${name}」已清除密码。`);
+			await renderMyBanks(currentUser);
+			void renderPublicBanks(true);
+		} catch (error) { await handleCloudFailure("密码保存失败", error); }
 	}
 
 	async function removeCloudBank(id: string, name: string) {
@@ -547,8 +637,23 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 	}
 
 	byId<HTMLElement>("public-bank-list")?.addEventListener("click", (event) => {
-		const btn = (event.target as HTMLElement).closest<HTMLElement>("[data-action]");
+		const target = event.target as HTMLElement;
+		// 行内密码表单的取消按钮
+		const cancel = target.closest<HTMLElement>('[data-action="pwd-cancel"]');
+		if (cancel) {
+			const row = cancel.closest<HTMLElement>(".bank-row");
+			const id = row?.querySelector<HTMLElement>('[data-action="open"]')?.dataset.id;
+			if (id) removePasswordForm(id);
+			return;
+		}
+		const btn = target.closest<HTMLElement>("[data-action]");
 		if (!btn || btn.dataset.action !== "open" || !btn.dataset.id) return;
+		const row = btn.closest<HTMLElement>(".bank-row");
+		// 有密码的公开题库：展开行内密码输入（属主可在「我的题库」里免密打开）
+		if (row?.dataset.locked === "1") {
+			expandPasswordForm(row, btn.dataset.id, btn.dataset.name ?? "");
+			return;
+		}
 		void openCloudBank(btn.dataset.id, btn.dataset.name ?? "");
 	});
 	byId<HTMLElement>("my-bank-list")?.addEventListener("click", (event) => {
@@ -557,7 +662,8 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 		const id = btn.dataset.id;
 		const name = btn.dataset.name ?? "";
 		if (btn.dataset.action === "open") void openCloudBank(id, name);
-		else if (btn.dataset.action === "toggle-public") void togglePublicBank(id, btn.dataset.pub !== "1");
+		else if (btn.dataset.action === "toggle-public") void togglePublicBank(id, btn.dataset.pub !== "1", btn.dataset.hasPwd === "1");
+		else if (btn.dataset.action === "password") void changeBankPassword(id, name, btn.dataset.hasPwd === "1");
 		else if (btn.dataset.action === "delete") void removeCloudBank(id, name);
 	});
 
