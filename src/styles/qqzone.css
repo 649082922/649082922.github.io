@@ -1,34 +1,29 @@
-/* QZone 怀旧风覆盖层 —— 用 html:root / html:root.dark 高特异性覆盖 fuwari 变量，
-   不碰 variables.styl，亮/暗双套，不破坏 hue 滑块机制。 */
+/*
+ * Orbit 全局表面层（沿用旧文件名以兼容现有导入）。
+ * 设计变量集中在 variables.styl；这里只负责全局材质、焦点和可访问性。
+ */
 
-/* 1) 怀旧暖色渐变背景 —— 浅蓝粉 + 暖奶橙 */
 html:root {
-  --page-bg: #fff5f0;
-  --body-text: #302a2e;
-  --body-muted: #746a72;
-  background-color: #fff5f0;
-  background-image:
-    radial-gradient(1200px 800px at 8% -5%, #ffd9e8 0%, transparent 55%),
-    radial-gradient(1000px 700px at 100% 5%, #cfe4ff 0%, transparent 50%),
-    linear-gradient(160deg, #fff1d6 0%, #ffe1ee 38%, #e3eeff 72%, #fbe1f2 100%) !important;
-  background-attachment: fixed;
-  background-size: cover;
-}
-html:root.dark {
-  --page-bg: #211a26;
-  --body-text: #f4edf5;
-  --body-muted: #c9bdcc;
-  background-color: #211a26;
-  background-image:
-    radial-gradient(1000px 700px at 8% -5%, rgba(150, 80, 130, 0.38) 0%, transparent 55%),
-    radial-gradient(900px 600px at 100% 5%, rgba(70, 95, 160, 0.32) 0%, transparent 50%),
-    linear-gradient(160deg, #26203a 0%, #241a2c 50%, #1a2233 100%) !important;
-  background-attachment: fixed;
-  background-size: cover;
+  --body-text: var(--text-strong);
+  --body-muted: var(--text-muted);
+  background-color: var(--page-bg);
+  background-image: radial-gradient(
+    72rem 42rem at 88% -12%,
+    oklch(0.76 0.10 var(--hue) / 0.09),
+    transparent 68%
+  );
+  background-attachment: scroll;
+  color: var(--body-text);
 }
 
-/* 统一正文前景色，避免没有单独声明颜色的页面在暗色卡片上继承黑色。 */
-html:root,
+html:root.dark {
+  background-image: radial-gradient(
+    72rem 42rem at 88% -12%,
+    oklch(0.62 0.12 var(--hue) / 0.11),
+    transparent 68%
+  );
+}
+
 html:root body {
   color: var(--body-text);
 }
@@ -38,44 +33,117 @@ html:root .float-panel {
   color: var(--body-text);
 }
 
-html:root.dark input,
-html:root.dark textarea,
-html:root.dark select {
+.card-base {
+  border: 1px solid var(--border-subtle);
+  background: var(--card-bg);
+  box-shadow: var(--shadow-card);
+}
+
+.card-shadow {
+  box-shadow: var(--shadow-card);
+  filter: none;
+}
+
+.float-panel {
+  border: 1px solid var(--border-subtle);
+  background: var(--float-panel-bg);
+  box-shadow: var(--shadow-raised);
+  backdrop-filter: blur(18px) saturate(1.12);
+  -webkit-backdrop-filter: blur(18px) saturate(1.12);
+}
+
+.float-panel-closed {
+  visibility: hidden;
+}
+
+.float-panel:not(.float-panel-closed) {
+  visibility: visible;
+}
+
+.btn-card,
+.btn-regular {
+  border-radius: 0.85rem;
+}
+
+.btn-plain {
+  color: var(--text-muted);
+}
+
+.btn-regular {
+  color: var(--accent-text);
+}
+
+.text-50,
+.text-30,
+.text-25 {
+  color: var(--text-muted);
+}
+
+.meta-icon {
+  color: var(--accent-text);
+}
+
+input,
+textarea,
+select {
   color: var(--body-text);
   caret-color: var(--body-text);
 }
 
-html:root.dark input::placeholder,
-html:root.dark textarea::placeholder {
-  color: var(--body-muted);
-  opacity: 0.78;
+input::placeholder,
+textarea::placeholder {
+  color: var(--text-subtle);
+  opacity: 1;
 }
 
-/* 2) 卡片：更圆润 + 粉色柔光阴影 + 毛玻璃半透明 */
-html:root {
-  --radius-large: 1.5rem;
-  --card-bg: rgba(255, 255, 255, 0.72);
-}
-html:root.dark {
-  --card-bg: rgba(48, 40, 58, 0.62);
+[hidden] {
+  display: none !important;
 }
 
-.card-base {
-  border-radius: var(--radius-large) !important;
-  backdrop-filter: blur(8px) saturate(1.05);
-  -webkit-backdrop-filter: blur(8px) saturate(1.05);
-  box-shadow: 0 8px 24px rgba(255, 170, 195, 0.28), 0 2px 6px rgba(120, 90, 140, 0.1);
-}
-:root.dark .card-base {
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.45), 0 2px 6px rgba(0, 0, 0, 0.3);
-}
-.card-shadow {
-  filter: drop-shadow(0 4px 10px rgba(255, 182, 210, 0.35));
+html :is(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+  outline: 2px solid var(--focus-ring);
+  outline-offset: 3px;
 }
 
-/* 3) 浮动面板/按钮也圆润一点 */
-.float-panel,
-.btn-card,
-.btn-regular {
-  border-radius: 1rem !important;
+.skip-link {
+  position: fixed;
+  top: 0.75rem;
+  left: 0.75rem;
+  z-index: 100001;
+  padding: 0.75rem 1rem;
+  transform: translateY(-180%);
+  border: 1px solid var(--border-strong);
+  border-radius: 0.75rem;
+  background: var(--surface-solid);
+  color: var(--text-strong);
+  box-shadow: var(--shadow-raised);
+  font-weight: 700;
+}
+
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+::selection {
+  background: var(--selection-bg);
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .float-panel {
+    background: var(--surface-solid);
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .float-panel {
+    background: var(--surface-solid);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+@media (forced-colors: active) {
+  html :is(a, button, input, textarea, select, summary, [tabindex]):focus-visible {
+    outline: 2px solid Highlight;
+  }
 }

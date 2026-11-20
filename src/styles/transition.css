@@ -9,7 +9,7 @@ html.is-animating .transition-swup-fade {
 /* Fade-in animations for components */
 @keyframes fade-in-up {
     0% {
-        transform: translateY(2rem);
+        transform: translateY(0.75rem);
         opacity: 0;
     }
     100% {
@@ -21,7 +21,7 @@ html.is-animating .transition-swup-fade {
 /* Main components */
 .onload-animation {
     opacity: 0;
-    animation: 300ms fade-in-up;
+    animation: var(--duration-page) var(--ease-out) fade-in-up;
     animation-fill-mode: forwards;
 }
 #navbar {
@@ -50,4 +50,21 @@ html.is-animating .transition-swup-fade {
 #post-container :nth-child(4) { animation-delay: calc(var(--content-delay) + 175ms) }
 #post-container :nth-child(5) { animation-delay: calc(var(--content-delay) + 250ms) }
 #post-container :nth-child(6) { animation-delay: calc(var(--content-delay) + 325ms) }
+
+/*
+ * 保留极短 animation，而非 animation:none：
+ * TOC 仍依赖 animationend 完成初始化。
+ */
+@media (prefers-reduced-motion: reduce) {
+    :root { --content-delay: 0ms; }
+    html.is-changing .transition-swup-fade {
+        transition-duration: 0.01ms;
+    }
+    .onload-animation {
+        opacity: 1;
+        animation-duration: 0.01ms;
+        animation-delay: 0ms !important;
+        transform: none;
+    }
+}
 

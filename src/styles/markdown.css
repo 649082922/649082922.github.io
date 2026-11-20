@@ -133,5 +133,49 @@
         overflow-x: auto;
         margin: 1em 0;
     }
-    
+
+}
+
+/* Orbit 中文阅读版心：正文收敛到约 46rem；代码块与表格保持可用宽度 */
+.custom-md.markdown-body {
+    font-size: 1.02rem;
+    line-height: 1.85;
+    max-width: 46rem;
+}
+
+@media (min-width: 1280px) {
+    .custom-md.markdown-body {
+        font-size: 1.06rem;
+    }
+}
+
+@media (max-width: 767px) {
+    .custom-md.markdown-body {
+        font-size: 0.98rem;
+        line-height: 1.8;
+    }
+}
+
+.custom-md.markdown-body :is(h2, h3, h4) {
+    scroll-margin-top: 5.5rem;
+    letter-spacing: -0.015em;
+}
+
+.custom-md.markdown-body h2 {
+    margin-top: 2.4em;
+    padding-bottom: 0.35em;
+    border-bottom: 1px solid var(--border-subtle);
+    font-size: 1.5em;
+    font-weight: 750;
+}
+
+.custom-md.markdown-body h3 {
+    margin-top: 2em;
+    font-size: 1.22em;
+    font-weight: 720;
+}
+
+.custom-md.markdown-body a:not(.no-styling) {
+    display: inline;
+    overflow-wrap: anywhere;
 }

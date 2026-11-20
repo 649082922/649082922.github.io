@@ -18,7 +18,6 @@ const className = Astro.props.class;
 const ADJ_DIST = 2;
 const VISIBLE = ADJ_DIST * 2 + 1;
 
-// for test
 let count = 1;
 let l = page.currentPage;
 let r = page.currentPage;
@@ -51,34 +50,108 @@ const getPageUrl = (p: number) => {
 };
 ---
 
-<div class:list={[className, "flex flex-row gap-3 justify-center"]} style={style}>
-    <a href={page.url.prev || ""} aria-label={page.url.prev ? "Previous Page" : null}
-       class:list={["btn-card overflow-hidden rounded-lg text-[var(--primary)] w-11 h-11",
-           {"disabled": page.url.prev == undefined}
-       ]}
-    >
-        <Icon name="material-symbols:chevron-left-rounded" class="text-[1.75rem]"></Icon>
-    </a>
-    <div class="bg-[var(--card-bg)] flex flex-row rounded-lg items-center text-neutral-700 dark:text-neutral-300 font-bold">
-        {pages.map((p) => {
-            if (p == HIDDEN)
-                return <Icon name="material-symbols:more-horiz" class="mx-1"/>;
-            if (p == page.currentPage)
-                return <div class="h-11 w-11 rounded-lg bg-[var(--primary)] flex items-center justify-center
-                    font-bold text-white dark:text-black/70"
-                >
-                    {p}
-                </div>
-            return <a href={url(getPageUrl(p))} aria-label={`Page ${p}`}
-                class="btn-card w-11 h-11 rounded-lg overflow-hidden active:scale-[0.85]"
-            >{p}</a>
-        })}
-    </div>
-    <a href={page.url.next || ""} aria-label={page.url.next ? "Next Page" : null}
-       class:list={["btn-card overflow-hidden rounded-lg text-[var(--primary)] w-11 h-11",
-           {"disabled": page.url.next == undefined}
-       ]}
-    >
-        <Icon name="material-symbols:chevron-right-rounded" class="text-[1.75rem]"></Icon>
-    </a>
-</div>
+<nav class:list={[className, "pagination"]} style={style} aria-label="文章分页">
+	{page.url.prev ? (
+		<a href={url(page.url.prev)} aria-label="上一页" class="page-arrow">
+			<Icon name="material-symbols:chevron-left-rounded" class="text-[1.75rem]"></Icon>
+		</a>
+	) : (
+		<span class="page-arrow" aria-hidden="true" inert>
+			<Icon name="material-symbols:chevron-left-rounded" class="text-[1.75rem]"></Icon>
+		</span>
+	)}
+
+	<div class="page-list">
+		{pages.map((p) => {
+			if (p == HIDDEN)
+				return <span class="page-ellipsis" aria-hidden="true">…</span>;
+			if (p == page.currentPage)
+				return (
+					<span aria-current="page" class="page-item current">
+						{p}
+					</span>
+				);
+			return (
+				<a href={url(getPageUrl(p))} aria-label={`第 ${p} 页`} class="page-item">
+					{p}
+				</a>
+			);
+		})}
+	</div>
+
+	{page.url.next ? (
+		<a href={url(page.url.next)} aria-label="下一页" class="page-arrow">
+			<Icon name="material-symbols:chevron-right-rounded" class="text-[1.75rem]"></Icon>
+		</a>
+	) : (
+		<span class="page-arrow" aria-hidden="true" inert>
+			<Icon name="material-symbols:chevron-right-rounded" class="text-[1.75rem]"></Icon>
+		</span>
+	)}
+</nav>
+
+<style>
+	.pagination {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		justify-content: center;
+		gap: 0.75rem;
+	}
+	.page-list {
+		display: flex;
+		flex-direction: row;
+		align-items: center;
+		border: 1px solid var(--border-subtle);
+		border-radius: 0.85rem;
+		background: var(--card-bg);
+		box-shadow: var(--shadow-card);
+		padding: 0.25rem;
+	}
+	.page-item,
+	.page-arrow {
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2.75rem;
+		height: 2.75rem;
+		border-radius: 0.65rem;
+		color: var(--text-muted);
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+	.page-arrow {
+		border: 1px solid var(--border-subtle);
+		background: var(--card-bg);
+		box-shadow: var(--shadow-card);
+		color: var(--text-muted);
+	}
+	.page-arrow[href]:hover {
+		color: var(--accent-text);
+		border-color: var(--border-strong);
+	}
+	.page-arrow:not([href]) { opacity: 0.35; }
+	.pagination a:focus-visible {
+		outline: 2px solid var(--focus-ring);
+		outline-offset: 2px;
+	}
+	.page-item:hover {
+		background: var(--btn-plain-bg-hover);
+		color: var(--accent-text);
+	}
+	.page-item.current {
+		background: var(--primary);
+		color: var(--on-accent);
+	}
+	.page-ellipsis {
+		min-width: 1.4rem;
+		text-align: center;
+		color: var(--text-subtle);
+	}
+	@media (max-width: 480px) {
+		.pagination { gap: 0.4rem; }
+		.page-item, .page-arrow { width: 2.35rem; height: 2.35rem; }
+		.page-ellipsis { min-width: 1rem; }
+		.page-list { padding: 0.2rem; }
+	}
+</style>

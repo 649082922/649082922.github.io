@@ -27,81 +27,177 @@
 
 <style>
 	.cloud-panel {
-		--cloud-text: #302a2e;
-		--cloud-muted: #746a72;
-		--cloud-line: rgba(48, 42, 46, 0.14);
-		margin-bottom: 1rem;
+		margin-bottom: 1.25rem;
 		padding: clamp(1rem, 2.2vw, 1.4rem);
-		border: 1px solid color-mix(in srgb, var(--primary) 20%, transparent);
+		border: 1px solid var(--border-subtle);
 		border-radius: 1rem;
-		background: color-mix(in srgb, var(--primary) 4%, var(--card-bg));
-		color: var(--cloud-text);
-	}
-	:global(.dark) .cloud-panel {
-		--cloud-text: #f4edf5;
-		--cloud-muted: #c9bdcc;
-		--cloud-line: rgba(255, 244, 255, 0.15);
+		background: var(--surface-muted);
+		box-shadow: var(--shadow-card);
+		color: var(--text-strong);
 	}
 	.cloud-kicker {
-		margin: 0 0 0.4rem;
-		font: 800 0.68rem/1 ui-monospace, SFMono-Regular, Consolas, monospace;
-		letter-spacing: 0.14em;
-		color: var(--primary);
+		margin: 0 0 0.35rem;
+		color: var(--accent-text);
+		font-size: 0.76rem;
+		font-weight: 700;
+		line-height: 1.4;
 	}
-	.cloud-copy h2 { margin: 0; font-size: 1.15rem; color: var(--cloud-text); }
-	.cloud-copy > p:last-child { margin: 0.45rem 0 0; color: var(--cloud-muted); font-size: 0.82rem; }
-	.cloud-actions { display: flex; gap: 0.6rem; margin-top: 1rem; flex-wrap: wrap; }
-	.cloud-hint { margin: 0; font-size: 0.8rem; color: var(--cloud-muted); }
-	.cloud-hint strong { color: var(--primary); }
+	.cloud-copy h2 {
+		margin: 0;
+		color: var(--text-strong);
+		font-size: 1.08rem;
+		font-weight: 750;
+		line-height: 1.5;
+		letter-spacing: -0.01em;
+	}
+	.cloud-copy > p:last-child {
+		max-width: 48rem;
+		margin: 0.45rem 0 0;
+		color: var(--text-muted);
+		font-size: 0.82rem;
+		line-height: 1.7;
+	}
+	.cloud-actions {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.6rem;
+		margin-top: 1rem;
+	}
+	.cloud-hint {
+		margin: 0;
+		color: var(--text-muted);
+		font-size: 0.8rem;
+		line-height: 1.65;
+	}
+	.cloud-hint strong { color: var(--accent-text); }
 	.cloud-actions[hidden] { display: none; }
 	.cloud-button {
-		min-height: 2.7rem;
-		padding: 0 1rem;
-		border: 1px solid var(--cloud-line);
-		border-radius: 0.65rem;
-		font-size: 0.78rem;
-		font-weight: 750;
+		min-height: 2.75rem;
+		padding: 0.65rem 1rem;
+		border: 1px solid var(--border-subtle);
+		border-radius: 0.7rem;
+		background: var(--surface-solid);
+		color: var(--text-strong);
+		font-family: inherit;
+		font-size: 0.8rem;
+		font-weight: 700;
+		line-height: 1.3;
 		cursor: pointer;
-		color: var(--cloud-text);
-		background: transparent;
+		transition:
+			background-color var(--duration-fast) ease,
+			border-color var(--duration-fast) ease,
+			color var(--duration-fast) ease,
+			box-shadow var(--duration-fast) ease;
 	}
-	.cloud-button.github { background: #24292f; border-color: #24292f; color: #fff; }
-	.cloud-button.primary { background: var(--primary); border-color: var(--primary); color: var(--deep-text); font-weight: 800; }
-	.cloud-button.secondary:hover { border-color: var(--primary); color: var(--primary); }
+	.cloud-button.github {
+		border-color: var(--text-strong);
+		background: var(--text-strong);
+		color: var(--surface-solid);
+	}
+	.cloud-button.primary {
+		border-color: var(--accent-fill);
+		background: var(--accent-fill);
+		color: var(--on-accent);
+		font-weight: 800;
+	}
+	.cloud-button.secondary:hover {
+		border-color: var(--accent-text);
+		color: var(--accent-text);
+	}
+	.cloud-button.primary:hover { box-shadow: var(--shadow-card); }
 	.cloud-button:disabled { cursor: wait; opacity: 0.55; }
+	.cloud-button:focus-visible,
+	.text-button:focus-visible {
+		outline: 2px solid var(--focus-ring);
+		outline-offset: 3px;
+	}
 	.user-panel {
-		margin-top: 1rem;
 		display: flex;
 		align-items: center;
 		justify-content: space-between;
 		gap: 1rem;
+		margin-top: 1rem;
 		padding-top: 1rem;
-		border-top: 1px solid var(--cloud-line);
+		border-top: 1px solid var(--border-subtle);
 	}
 	.user-panel[hidden] { display: none; }
-	.user-panel span { display: block; font-size: 0.7rem; color: var(--cloud-muted); }
-	.user-panel strong { display: block; margin-top: 0.2rem; color: var(--cloud-text); }
-	.user-actions { display: flex; gap: 0.5rem; flex-wrap: wrap; justify-content: flex-end; }
-	.text-button {
-		border: 1px solid var(--cloud-line);
-		border-radius: 0.65rem;
-		background: transparent;
-		color: var(--cloud-muted);
-		cursor: pointer;
-		font-family: inherit;
-		font-size: 0.76rem;
-		font-weight: 750;
-		padding: 0 1rem;
-		min-height: 2.7rem;
-		transition: border-color 0.15s ease, color 0.15s ease;
+	.user-panel > div:first-child { min-width: 0; }
+	.user-panel span {
+		display: block;
+		color: var(--success);
+		font-size: 0.72rem;
+		font-weight: 700;
 	}
-	.text-button:hover { border-color: #d95b65; color: #d95b65; }
-	.cloud-status { min-height: 1.3em; margin: 0.7rem 0 0; font-size: 0.76rem; color: var(--primary); }
-	.privacy-note { margin: 0.4rem 0 0; font-size: 0.68rem; line-height: 1.5; color: var(--cloud-muted); }
+	.user-panel strong {
+		display: block;
+		margin-top: 0.2rem;
+		color: var(--text-strong);
+		overflow-wrap: anywhere;
+	}
+	.user-actions {
+		display: flex;
+		flex-wrap: wrap;
+		justify-content: flex-end;
+		gap: 0.5rem;
+	}
+	.text-button {
+		min-height: 2.75rem;
+		padding: 0.65rem 1rem;
+		border: 1px solid var(--border-subtle);
+		border-radius: 0.7rem;
+		background: transparent;
+		color: var(--text-muted);
+		font-family: inherit;
+		font-size: 0.78rem;
+		font-weight: 700;
+		line-height: 1.3;
+		cursor: pointer;
+		transition:
+			border-color var(--duration-fast) ease,
+			color var(--duration-fast) ease;
+	}
+	.text-button:hover {
+		border-color: var(--danger);
+		color: var(--danger);
+	}
+	.cloud-status {
+		min-height: 1.5em;
+		margin: 0.7rem 0 0;
+		color: var(--info);
+		font-size: 0.78rem;
+		line-height: 1.5;
+		overflow-wrap: anywhere;
+	}
+	.privacy-note {
+		margin: 0.4rem 0 0;
+		color: var(--text-subtle);
+		font-size: 0.7rem;
+		line-height: 1.6;
+	}
 	@media (max-width: 640px) {
-		.user-panel { align-items: flex-start; flex-direction: column; }
-		.user-actions { width: 100%; justify-content: flex-start; }
-		.cloud-button { flex: 1; }
+		.cloud-panel { padding: 1rem; }
+		.user-panel {
+			align-items: flex-start;
+			flex-direction: column;
+		}
+		.user-actions {
+			display: grid;
+			grid-template-columns: repeat(2, minmax(0, 1fr));
+			width: 100%;
+			gap: 0.5rem;
+		}
+		.cloud-button {
+			width: 100%;
+			padding-inline: 0.65rem;
+		}
+		.text-button {
+			grid-column: 1 / -1;
+			width: 100%;
+		}
+	}
+	@media (prefers-reduced-motion: reduce) {
+		.cloud-button,
+		.text-button { transition: none; }
 	}
 </style>
 

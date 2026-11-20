@@ -103,13 +103,13 @@ const mainPanelTop = siteConfig.banner.enable
 </div>
 
 <!-- The things that should be under the banner, only the TOC for now -->
-<div class="absolute w-full z-0 hidden 2xl:block">
+<div class="absolute w-full z-0 toc-viewport-only">
     <div class="relative max-w-[var(--page-width)] mx-auto">
         <!-- TOC component -->
-        {siteConfig.toc.enable && <div id="toc-wrapper" class:list={["hidden lg:block transition absolute top-0 -right-[var(--toc-width)] w-[var(--toc-width)] items-center",
+        {siteConfig.toc.enable && <div id="toc-wrapper" class:list={["toc-viewport-only transition absolute top-0 -right-[var(--toc-width)] w-[var(--toc-width)] max-w-[15rem] items-center",
             {"toc-hide": siteConfig.banner.enable}]}
         >
-            <div id="toc-inner-wrapper" class="fixed top-14 w-[var(--toc-width)] h-[calc(100vh_-_20rem)] overflow-y-scroll overflow-x-hidden hide-scrollbar">
+            <div id="toc-inner-wrapper" class="fixed top-14 w-[var(--toc-width)] max-w-[15rem] h-[calc(100vh_-_20rem)] overflow-y-scroll overflow-x-hidden hide-scrollbar">
                 <div id="toc" class="w-full h-full transition-swup-fade ">
                     <div class="h-8 w-full"></div>
                     <TOC headings={headings}></TOC>
@@ -122,4 +122,14 @@ const mainPanelTop = siteConfig.banner.enable
         {!siteConfig.toc.enable && <div id="toc"></div>}
     </div>
 </div>
+
+<style is:global>
+    /* 目录只在足够宽的视口显示：
+       页宽 95rem 时，1800px 视口的目录约 120px、1920px 约 184px、2560px 封顶 15rem */
+    .toc-viewport-only { display: none; }
+    @media (min-width: 1800px) {
+        .toc-viewport-only { display: block; }
+        #toc-wrapper.toc-viewport-only { display: flex; }
+    }
+</style>
 </Layout>

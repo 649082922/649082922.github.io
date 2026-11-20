@@ -21,7 +21,7 @@ import { Icon } from "astro-icon/components";
     pointer-events: none
 
 .back-to-top-btn
-    color: var(--primary)
+    color: var(--accent-text)
     font-size: 2.25rem
     font-weight: bold
     border: none
@@ -37,6 +37,7 @@ import { Icon } from "astro-icon/components";
         transform: translateX(5rem) scale(0.9)
         opacity: 0
         pointer-events: none
+        visibility: hidden
     &:active
       transform: translateX(5rem) scale(0.9)
 
@@ -44,6 +45,7 @@ import { Icon } from "astro-icon/components";
 
 <script is:raw is:inline>
 function backToTop() {
-    window.scroll({ top: 0, behavior: 'smooth' });
+    var reduce = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    window.scroll({ top: 0, behavior: reduce ? 'auto' : 'smooth' });
 }
 </script>

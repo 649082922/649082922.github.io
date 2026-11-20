@@ -1,5 +1,4 @@
 ---
-import { Icon } from "astro-icon/components";
 import I18nKey from "../i18n/i18nKey";
 import { i18n } from "../i18n/translation";
 import { formatDateToYYYYMMDD } from "../utils/date-utils";
@@ -23,60 +22,69 @@ const {
 	hideUpdateDate = false,
 } = Astro.props;
 const className = Astro.props.class;
+
+const showUpdated =
+	!hideUpdateDate && updated && updated.getTime() !== published.getTime();
 ---
 
-<div class:list={["flex flex-wrap text-neutral-500 dark:text-neutral-400 items-center gap-4 gap-x-4 gap-y-2", className]}>
-    <!-- publish date -->
-    <div class="flex items-center">
-        <div class="meta-icon"
-        >
-            <Icon name="material-symbols:calendar-today-outline-rounded" class="text-xl"></Icon>
-        </div>
-        <span class="text-50 text-sm font-medium">{formatDateToYYYYMMDD(published)}</span>
-    </div>
-
-    <!-- update date -->
-    {!hideUpdateDate && updated && updated.getTime() !== published.getTime() && (
-        <div class="flex items-center">
-            <div class="meta-icon"
-            >
-                <Icon name="material-symbols:edit-calendar-outline-rounded" class="text-xl"></Icon>
-            </div>
-            <span class="text-50 text-sm font-medium">{formatDateToYYYYMMDD(updated)}</span>
-        </div>
-    )}
-
-    <!-- categories -->
-    <div class="flex items-center">
-        <div class="meta-icon"
-        >
-            <Icon name="material-symbols:book-2-outline-rounded" class="text-xl"></Icon>
-        </div>
-        <div class="flex flex-row flex-nowrap items-center">
-            <a href={getCategoryUrl(category)} aria-label={`View all posts in the ${category} category`}
-               class="link-lg transition text-50 text-sm font-medium
-                            hover:text-[var(--primary)] dark:hover:text-[var(--primary)] whitespace-nowrap">
-                {category || i18n(I18nKey.uncategorized)}
-            </a>
-        </div>
-    </div>
-
-    <!-- tags -->
-    <div class:list={["items-center", {"flex": !hideTagsForMobile, "hidden md:flex": hideTagsForMobile}]}>
-        <div class="meta-icon"
-        >
-            <Icon name="material-symbols:tag-rounded" class="text-xl"></Icon>
-        </div>
-        <div class="flex flex-row flex-nowrap items-center">
-            {(tags && tags.length > 0) && tags.map((tag, i) => (
-                <div class:list={[{"hidden": i == 0}, "mx-1.5 text-[var(--meta-divider)] text-sm"]}>/</div>
-                <a href={getTagUrl(tag)} aria-label={`View all posts with the ${tag.trim()} tag`}
-                   class="link-lg transition text-50 text-sm font-medium
-                                hover:text-[var(--primary)] dark:hover:text-[var(--primary)] whitespace-nowrap">
-                    {tag.trim()}
-                </a>
-            ))}
-            {!(tags && tags.length > 0) && <div class="transition text-50 text-sm font-medium">{i18n(I18nKey.noTags)}</div>}
-        </div>
-    </div>
+<div class:list={["post-meta-row", { "hide-tags-mobile": hideTagsForMobile }, className]}>
+	<time datetime={published.toISOString()}>{formatDateToYYYYMMDD(published)}</time>
+	{showUpdated && updated && (
+		<span class="meta-updated">
+			更新于 <time datetime={updated.toISOString()}>{formatDateToYYYYMMDD(updated)}</time>
+		</span>
+	)}
+	<a href={getCategoryUrl(category)} aria-label={`查看 ${category ?? ""} 分类下的全部文章`} class="meta-link">
+		{category || i18n(I18nKey.uncategorized)}
+	</a>
+	<div class:list={["meta-tags", { "mobile-hidden": hideTagsForMobile }]}>
+		{tags && tags.length > 0 ? (
+			tags.map((tag) => (
+				<a href={getTagUrl(tag)} aria-label={`查看包含 ${tag.trim()} 标签的全部文章`} class="meta-link">
+					{tag.trim()}
+				</a>
+			))
+		) : (
+			<span>{i18n(I18nKey.noTags)}</span>
+		)}
+	</div>
 </div>
+
+<style>
+	.post-meta-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.35rem 0.8rem;
+		color: var(--text-muted);
+		font-size: 0.8rem;
+		line-height: 1.6;
+	}
+	.post-meta-row > * + *::before,
+	.meta-tags a + a::before {
+		content: "·";
+		margin-right: 0.8rem;
+		color: var(--meta-divider);
+	}
+	time { font-variant-numeric: tabular-nums; }
+	.meta-updated { color: var(--text-subtle); }
+	.meta-link {
+		color: var(--text-muted);
+		font-weight: 600;
+		border-radius: 0.35rem;
+		white-space: nowrap;
+	}
+	.meta-link:hover { color: var(--accent-text); }
+	.meta-link:focus-visible {
+		outline: 2px solid var(--focus-ring);
+		outline-offset: 2px;
+	}
+	.meta-tags { display: flex; flex-wrap: wrap; align-items: center; gap: 0.35rem 0.8rem; }
+	.hide-tags-mobile .meta-tags { display: none; }
+	@media (min-width: 768px) {
+		.hide-tags-mobile .meta-tags { display: flex; }
+	}
+	@media (max-width: 767px) {
+		.post-meta-row { font-size: 0.78rem; }
+	}
+</style>

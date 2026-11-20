@@ -2,6 +2,7 @@
 import type { CollectionEntry } from "astro:content";
 import { getCollection, render } from "astro:content";
 import Markdown from "@components/misc/Markdown.astro";
+import PageHeader from "@/components/PageHeader.astro";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
 import { Icon } from "astro-icon/components";
 
@@ -49,6 +50,14 @@ for (const t of items) {
 let delay = 0;
 ---
 <MainGridLayout title="说说" description="说说墙 · 短动态流">
+	<div class="mb-5 onload-animation">
+		<PageHeader
+			compact
+			title="说说"
+			description="数据库运维内外的短动态：一次排障的插曲、一个心得、一点日常。"
+			meta={`${items.length} 条`}
+		/>
+	</div>
 	<div class="flex flex-col gap-6 mb-4">
 		{groups.map((g) => (
 			<section class="transition flex flex-col gap-4">
@@ -63,7 +72,7 @@ let delay = 0;
 							class:list={["card-base rounded-[var(--radius-large)] p-6 relative onload-animation transition"]}
 							style={`animation-delay: calc(var(--content-delay) + ${delay++ * 50}ms);`}
 						>
-							<div class="flex flex-wrap items-center gap-3 mb-2 text-sm text-black/40 dark:text-white/40">
+							<div class="flex flex-wrap items-center gap-3 mb-2 text-sm text-[var(--text-subtle)]">
 								<span class="flex items-center gap-1 font-medium">
 									<Icon name="material-symbols:schedule-outline-rounded" class="text-lg" />
 									{t.dateLabel}

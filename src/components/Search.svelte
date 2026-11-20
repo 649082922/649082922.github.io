@@ -125,17 +125,33 @@ onMount(() => {
 	}
 });
 
-$: if (initialized && keywordDesktop) {
-	(async () => {
-		await search(keywordDesktop, true);
-	})();
+let searchTimer: ReturnType<typeof setTimeout> | undefined;
+let lastRequestId = 0;
+
+const debouncedSearch = (keyword: string, isDesktop: boolean): void => {
+	clearTimeout(searchTimer);
+	const requestId = ++lastRequestId;
+	searchTimer = setTimeout(() => {
+		if (requestId !== lastRequestId) return;
+		void search(keyword, isDesktop);
+	}, 200);
+};
+
+// 关键词清空时也要走 search()，让结果和面板同步清空
+$: if (initialized) {
+	debouncedSearch(keywordDesktop, true);
 }
 
-$: if (initialized && keywordMobile) {
-	(async () => {
-		await search(keywordMobile, false);
-	})();
+$: if (initialized) {
+	debouncedSearch(keywordMobile, false);
 }
+
+const closePanelAndBlur = (event: KeyboardEvent): void => {
+	if (event.key !== "Escape") return;
+	const panel = document.getElementById("search-panel");
+	panel?.classList.add("float-panel-closed");
+	(event.target as HTMLInputElement)?.blur();
+};
 </script>
 
 <!-- search bar for desktop view -->
@@ -143,10 +159,10 @@ $: if (initialized && keywordMobile) {
       bg-black/[0.04] hover:bg-black/[0.06] focus-within:bg-black/[0.06]
       dark:bg-white/5 dark:hover:bg-white/10 dark:focus-within:bg-white/10
 ">
-    <Icon icon="material-symbols:search" class="absolute text-[1.25rem] pointer-events-none ml-3 transition my-auto text-black/30 dark:text-white/30"></Icon>
-    <input placeholder="{i18n(I18nKey.search)}" bind:value={keywordDesktop} on:focus={() => search(keywordDesktop, true)}
+    <Icon icon="material-symbols:search" class="absolute text-[1.25rem] pointer-events-none ml-3 transition my-auto text-[var(--text-subtle)]"></Icon>
+    <input placeholder="{i18n(I18nKey.search)}" aria-label={i18n(I18nKey.search)} bind:value={keywordDesktop} on:focus={() => search(keywordDesktop, true)} on:keydown={closePanelAndBlur}
            class="transition-all pl-10 text-sm bg-transparent outline-0
-         h-full w-40 active:w-60 focus:w-60 text-black/50 dark:text-white/50"
+         h-full w-40 active:w-60 focus:w-60 text-[var(--text-muted)]"
     >
 </div>
 
@@ -165,10 +181,10 @@ top-20 left-4 md:left-[unset] right-4 shadow-2xl rounded-2xl p-2">
       bg-black/[0.04] hover:bg-black/[0.06] focus-within:bg-black/[0.06]
       dark:bg-white/5 dark:hover:bg-white/10 dark:focus-within:bg-white/10
   ">
-        <Icon icon="material-symbols:search" class="absolute text-[1.25rem] pointer-events-none ml-3 transition my-auto text-black/30 dark:text-white/30"></Icon>
-        <input placeholder="Search" bind:value={keywordMobile}
+        <Icon icon="material-symbols:search" class="absolute text-[1.25rem] pointer-events-none ml-3 transition my-auto text-[var(--text-subtle)]"></Icon>
+        <input placeholder="搜索" aria-label="搜索" bind:value={keywordMobile} on:keydown={closePanelAndBlur}
                class="pl-10 absolute inset-0 text-sm bg-transparent outline-0
-               focus:w-60 text-black/50 dark:text-white/50"
+               text-[var(--text-muted)]"
         >
     </div>
 
@@ -176,9 +192,9 @@ top-20 left-4 md:left-[unset] right-4 shadow-2xl rounded-2xl p-2">
     {#each result as item}
         <a href={item.url}
            class="transition first-of-type:mt-2 lg:first-of-type:mt-0 group block
-       rounded-xl text-lg px-3 py-2 hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)]">
-            <div class="transition text-90 inline-flex font-bold group-hover:text-[var(--primary)]">
-                {item.meta.title}<Icon icon="fa6-solid:chevron-right" class="transition text-[0.75rem] translate-x-1 my-auto text-[var(--primary)]"></Icon>
+       rounded-xl px-3 py-2.5 hover:bg-[var(--btn-plain-bg-hover)] active:bg-[var(--btn-plain-bg-active)]">
+            <div class="transition text-90 inline-flex text-base font-semibold group-hover:text-[var(--accent-text)]">
+                {item.meta.title}<Icon icon="fa6-solid:chevron-right" class="transition text-[0.75rem] translate-x-1 my-auto text-[var(--accent-text)]"></Icon>
             </div>
             <div class="transition text-sm text-50">
                 {@html item.excerpt}
