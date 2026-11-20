@@ -6,76 +6,146 @@ import ImageWrapper from "../misc/ImageWrapper.astro";
 
 const config = profileConfig;
 ---
-<div class="card-base p-3">
-    <a aria-label="Go to About Page" href={url('/about/')}
-       class="group block relative mx-auto mt-1 lg:mx-0 lg:mt-0 mb-3
-       max-w-[12rem] lg:max-w-none overflow-hidden rounded-xl active:scale-95">
-        <div class="absolute transition pointer-events-none group-hover:bg-black/30 group-active:bg-black/50
-        w-full h-full z-50 flex items-center justify-center">
-            <Icon name="fa6-regular:address-card"
-                  class="transition opacity-0 scale-90 group-hover:scale-100 group-hover:opacity-100 text-white text-5xl">
-            </Icon>
-        </div>
-        <ImageWrapper src={config.avatar || ""} alt="Profile Image of the Author" class="mx-auto lg:w-full h-full lg:mt-0 "></ImageWrapper>
-    </a>
-    <div class="px-4">
-        <div class="font-bold text-xl text-center mb-1 dark:text-neutral-50 transition">{config.name}</div>
-        <div class="h-1 w-5 bg-[var(--primary)] mx-auto rounded-full mb-2 transition"></div>
-        <div class="text-center text-neutral-400 mb-2.5 transition">{config.bio}</div>
-        {config.signature && (
-            <div class="text-center text-sm italic px-2 mb-2.5 text-neutral-500 dark:text-neutral-400 transition">
-                <Icon name="fa6-solid:quote-left" class="inline text-[0.7rem] mr-1 text-[var(--primary)] opacity-60"></Icon>
-                {config.signature}
-            </div>
-        )}
-        {config.visitors && (
-            <div class="flex justify-center items-center gap-5 mb-2.5 text-xs text-neutral-500 dark:text-neutral-400 transition">
-                <span class="flex items-center gap-1">
-                    <Icon name="fa6-solid:eye" class="text-[0.9rem] text-[var(--primary)]"></Icon>今日访客
-                    <b class="text-[var(--primary)]">{config.visitors.today}</b>
-                </span>
-                <span class="w-px h-3 bg-neutral-300 dark:bg-neutral-600"></span>
-                <span class="flex items-center gap-1">
-                    <Icon name="fa6-solid:user-group" class="text-[0.9rem] text-[var(--primary)]"></Icon>总访问
-                    <b class="text-[var(--primary)]">{config.visitors.total}</b>
-                </span>
-            </div>
-        )}
-        {config.bgm && (
-            <audio id="profile-bgm" src={url(config.bgm.src)} loop preload="none"></audio>
-        )}
-        {config.bgm && (
-            <button id="bgm-toggle" aria-label="背景音乐"
-                class="btn-regular rounded-lg w-full h-9 gap-2 mb-2 active:scale-95 transition">
-                <Icon name="fa6-solid:music" class="text-[0.9rem]"></Icon>
-                <span class="text-sm font-medium" id="bgm-label">{config.bgm.title ?? "背景音乐"}</span>
-            </button>
-        )}
-        <script is:inline>
-        (function () {
-            var a = document.getElementById('profile-bgm');
-            var b = document.getElementById('bgm-toggle');
-            var l = document.getElementById('bgm-label');
-            if (!a || !b || !l) return;
-            var title = l.textContent || '背景音乐';
-            b.addEventListener('click', function () {
-                if (a.paused) { a.play(); l.textContent = '⏸ ' + title; }
-                else { a.pause(); l.textContent = '▶ ' + title; }
-            });
-        })();
-        </script>
-        <div class="flex flex-wrap gap-2 justify-center mb-1">
-            {config.links.length > 1 && config.links.map(item =>
-                    <a rel="me" aria-label={item.name} href={item.url} target="_blank" class="btn-regular rounded-lg h-10 w-10 active:scale-90">
-                        <Icon name={item.icon} class="text-[1.5rem]"></Icon>
-                    </a>
-            )}
-            {config.links.length == 1 && <a rel="me" aria-label={config.links[0].name} href={config.links[0].url} target="_blank"
-                                            class="btn-regular rounded-lg h-10 gap-2 px-3 font-bold active:scale-95">
-                <Icon name={config.links[0].icon} class="text-[1.5rem]"></Icon>
-                {config.links[0].name}
-            </a>}
-        </div>
-    </div>
+<div class="profile-card card-base">
+	<a aria-label="查看关于我" href={url("/about/")} class="profile-avatar">
+		<ImageWrapper src={config.avatar || ""} alt="作者头像" class="mx-auto h-full w-full"></ImageWrapper>
+	</a>
+	<div class="profile-content">
+		<h2 class="profile-name">{config.name}</h2>
+		<p class="profile-bio">{config.bio}</p>
+		{config.signature && (
+			<p class="profile-signature">
+				<Icon name="fa6-solid:quote-left" class="inline text-[0.65rem] mr-1"></Icon>
+				{config.signature}
+			</p>
+		)}
+		{config.visitors && (
+			<div class="profile-visitors">
+				<span><Icon name="fa6-solid:eye"></Icon>今日访客 <b>{config.visitors.today}</b></span>
+				<i aria-hidden="true"></i>
+				<span><Icon name="fa6-solid:user-group"></Icon>总访问 <b>{config.visitors.total}</b></span>
+			</div>
+		)}
+		{config.bgm && <audio id="profile-bgm" src={url(config.bgm.src)} loop preload="none"></audio>}
+		{config.bgm && (
+			<button id="bgm-toggle" aria-label="播放或暂停背景音乐" class="bgm-button btn-regular">
+				<Icon name="fa6-solid:music" class="text-[0.9rem]"></Icon>
+				<span id="bgm-label">{config.bgm.title ?? "背景音乐"}</span>
+			</button>
+		)}
+		<script is:inline>
+		(function () {
+			var a = document.getElementById('profile-bgm');
+			var b = document.getElementById('bgm-toggle');
+			var l = document.getElementById('bgm-label');
+			if (!a || !b || !l) return;
+			var title = l.textContent || '背景音乐';
+			b.addEventListener('click', async function () {
+				if (a.paused) {
+					try {
+						await a.play();
+						l.textContent = '暂停 · ' + title;
+					} catch (_) {
+						l.textContent = '点击播放 · ' + title;
+					}
+				} else {
+					a.pause();
+					l.textContent = title;
+				}
+			});
+		})();
+		</script>
+		<div class="profile-links">
+			{config.links.length > 1 && config.links.map((item) => (
+				<a rel="me noopener" aria-label={item.name} href={item.url} target="_blank" class="profile-link">
+					<Icon name={item.icon} class="text-[1.35rem]"></Icon>
+				</a>
+			))}
+			{config.links.length === 1 && (
+				<a rel="me noopener" aria-label={config.links[0].name} href={config.links[0].url} target="_blank" class="profile-link profile-link-wide">
+					<Icon name={config.links[0].icon} class="text-[1.35rem]"></Icon>
+					{config.links[0].name}
+				</a>
+			)}
+		</div>
+	</div>
 </div>
 
+<style>
+	.profile-card { padding: 0.75rem; }
+	.profile-avatar {
+		display: block;
+		overflow: hidden;
+		border: 1px solid var(--border-subtle);
+		border-radius: 1rem;
+		background: var(--surface-muted);
+	}
+	.profile-content { padding: 1rem 0.65rem 0.25rem; }
+	.profile-name {
+		margin: 0;
+		color: var(--text-strong);
+		font-size: 1.12rem;
+		font-weight: 750;
+		line-height: 1.4;
+		text-align: center;
+		letter-spacing: -0.02em;
+	}
+	.profile-bio {
+		margin: 0.65rem auto 0;
+		color: var(--text-muted);
+		font-size: 0.85rem;
+		line-height: 1.75;
+		text-align: center;
+	}
+	.profile-signature {
+		margin: 0.85rem 0 0;
+		color: var(--text-subtle);
+		font-size: 0.76rem;
+		line-height: 1.6;
+		text-align: center;
+	}
+	.profile-signature :global(svg) { color: var(--accent-text); }
+	.profile-visitors {
+		display: flex;
+		margin-top: 0.85rem;
+		align-items: center;
+		justify-content: center;
+		gap: 0.75rem;
+		color: var(--text-muted);
+		font-size: 0.7rem;
+	}
+	.profile-visitors span { display: flex; align-items: center; gap: 0.25rem; }
+	.profile-visitors b { color: var(--accent-text); }
+	.profile-visitors i { width: 1px; height: 0.8rem; background: var(--border-subtle); }
+	.bgm-button {
+		width: 100%;
+		min-height: 44px;
+		margin-top: 0.85rem;
+		gap: 0.5rem;
+		font-size: 0.8rem;
+	}
+	.profile-links {
+		display: flex;
+		flex-wrap: wrap;
+		margin-top: 0.9rem;
+		justify-content: center;
+		gap: 0.55rem;
+	}
+	.profile-link {
+		display: inline-flex;
+		min-width: 44px;
+		min-height: 44px;
+		border: 1px solid var(--border-subtle);
+		border-radius: 0.75rem;
+		align-items: center;
+		justify-content: center;
+		background: var(--surface-muted);
+		color: var(--text-muted);
+	}
+	.profile-link:hover { color: var(--accent-text); border-color: var(--border-strong); }
+	.profile-link-wide { padding: 0 0.9rem; gap: 0.5rem; font-weight: 650; }
+	@media (max-width: 1023px) {
+		.profile-avatar { max-width: 13rem; margin: 0 auto; }
+		.profile-content { max-width: 28rem; margin: 0 auto; }
+	}
+</style>

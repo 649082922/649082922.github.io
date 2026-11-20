@@ -19,6 +19,15 @@ import { defaultFavicons } from "../constants/icon";
 import type { Favicon } from "../types/config";
 import { pathsEqual, url } from "../utils/url-utils";
 import "katex/dist/katex.css";
+import "../styles/variables.styl";
+import "../styles/main.css";
+import "../styles/markdown.css";
+import "../styles/markdown-extend.styl";
+import "../styles/expressive-code.css";
+import "../styles/scrollbar.css";
+import "../styles/photoswipe.css";
+import "../styles/transition.css";
+// 兼容旧文件名：当前承载 Orbit 全局表面与可访问性规则。
 import "../styles/qqzone.css";
 
 interface Props {
@@ -100,7 +109,7 @@ const bannerOffset =
 		<meta name="twitter:title" content={pageTitle}>
 		<meta name="twitter:description" content={description || pageTitle}>
 
-		<meta name="viewport" content="width=device-width" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<meta name="generator" content={Astro.generator} />
 		{favicons.map(favicon => (
 			<link rel="icon"
@@ -152,6 +161,7 @@ const bannerOffset =
 	<body class=" min-h-screen transition " class:list={[{"lg:is-home": isHomePage, "enable-banner": enableBanner}]}
 		  data-overlayscrollbars-initialize
 	>
+		<a class="skip-link" href="#swup-container">跳转到正文</a>
 		<ConfigCarrier></ConfigCarrier>
 		<slot />
 

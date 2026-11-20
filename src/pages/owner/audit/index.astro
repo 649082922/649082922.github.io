@@ -1,15 +1,16 @@
 ---
+import PageHeader from "@/components/PageHeader.astro";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 ---
 
 <MainGridLayout title="访问审计" description="仅站长可访问的登录与云存档审计日志">
 	<meta slot="head" name="robots" content="noindex, nofollow, noarchive" />
 	<section class="audit-page card-base onload-animation">
-		<header>
-			<p>OWNER CONSOLE</p>
-			<h1>登录与云存档审计</h1>
-			<span>仅记录登录用户的登录、退出、上传与恢复事件。匿名访问不追踪。</span>
-		</header>
+		<PageHeader
+			title="登录与云存档审计"
+			description="仅记录登录用户的登录、退出、上传与恢复事件。匿名访问不追踪。"
+			meta="站长专用"
+		/>
 
 		<div class="audit-state" id="audit-state">正在检查站长权限…</div>
 		<div class="audit-login" id="audit-login" hidden>
@@ -34,33 +35,23 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 
 <style>
 	.audit-page {
-		--audit-text: #302a2e;
-		--audit-muted: #746a72;
-		--audit-line: rgba(48, 42, 46, 0.14);
 		padding: clamp(1.2rem, 3vw, 2rem);
-		color: var(--audit-text);
+		color: var(--text-strong);
 	}
-	:global(.dark) .audit-page {
-		--audit-text: #f4edf5;
-		--audit-muted: #c9bdcc;
-		--audit-line: rgba(255, 244, 255, 0.15);
-	}
-	header > p { margin: 0 0 0.6rem; color: var(--primary); font: 800 0.68rem/1 ui-monospace, monospace; letter-spacing: 0.14em; }
-	header h1 { margin: 0; color: var(--audit-text); font-size: clamp(1.7rem, 4vw, 2.6rem); }
-	header span { display: block; margin-top: 0.7rem; color: var(--audit-muted); font-size: 0.82rem; }
-	.audit-state, .audit-login { margin-top: 1.4rem; padding: 1rem; border: 1px solid var(--audit-line); border-radius: 0.75rem; color: var(--audit-muted); }
+	.audit-state, .audit-login { margin-top: 1.4rem; padding: 1rem; border: 1px solid var(--border-subtle); border-radius: 0.75rem; background: var(--surface-muted); color: var(--text-muted); }
 	.audit-login[hidden], .audit-content[hidden] { display: none; }
-	.audit-login a { color: var(--primary); font-weight: 750; }
+	.audit-login a { color: var(--accent-text); font-weight: 750; }
 	.audit-content { margin-top: 1.4rem; }
 	.audit-toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.7rem; }
-	.audit-toolbar strong { color: var(--audit-text); }
-	.audit-toolbar button { padding: 0.5rem 0.8rem; border: 1px solid var(--audit-line); border-radius: 0.55rem; background: transparent; color: var(--audit-text); cursor: pointer; }
-	.table-wrap { overflow-x: auto; border: 1px solid var(--audit-line); border-radius: 0.75rem; }
-	table { width: 100%; min-width: 46rem; border-collapse: collapse; color: var(--audit-text); font-size: 0.76rem; }
-	th, td { padding: 0.8rem; border-bottom: 1px solid var(--audit-line); text-align: left; vertical-align: top; }
-	th { color: var(--audit-muted); font-size: 0.68rem; letter-spacing: 0.05em; }
-	td:last-child { max-width: 22rem; word-break: break-word; color: var(--audit-muted); }
-	.event-badge { display: inline-flex; padding: 0.22rem 0.45rem; border-radius: 0.35rem; background: color-mix(in srgb, var(--primary) 12%, transparent); color: var(--primary); font-weight: 800; }
+	.audit-toolbar strong { color: var(--text-strong); }
+	.audit-toolbar button { min-height: 44px; padding: 0.5rem 1rem; border: 1px solid var(--border-subtle); border-radius: 0.65rem; background: var(--surface-muted); color: var(--text-strong); font-weight: 700; cursor: pointer; }
+	.audit-toolbar button:hover { border-color: var(--border-strong); color: var(--accent-text); }
+	.table-wrap { overflow-x: auto; border: 1px solid var(--border-subtle); border-radius: 0.75rem; }
+	table { width: 100%; min-width: 46rem; border-collapse: collapse; color: var(--text-strong); font-size: 0.76rem; }
+	th, td { padding: 0.8rem; border-bottom: 1px solid var(--border-subtle); text-align: left; vertical-align: top; }
+	th { color: var(--text-muted); font-size: 0.72rem; font-weight: 700; }
+	td:last-child { max-width: 22rem; word-break: break-word; color: var(--text-muted); }
+	.event-badge { display: inline-flex; padding: 0.22rem 0.5rem; border: 1px solid var(--border-subtle); border-radius: 999px; background: color-mix(in srgb, var(--primary) 10%, transparent); color: var(--accent-text); font-weight: 700; }
 </style>
 
 <script>

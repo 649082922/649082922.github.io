@@ -1,21 +1,68 @@
 ---
-
 import { profileConfig } from "../config";
 import { url } from "../utils/url-utils";
 
 const currentYear = new Date().getFullYear();
 ---
 
-<!--<div class="border-t border-[var(&#45;&#45;primary)] mx-16 border-dashed py-8 max-w-[var(&#45;&#45;page-width)] flex flex-col items-center justify-center px-6">-->
-<div class="transition border-t border-black/10 dark:border-white/15 my-10 border-dashed mx-32"></div>
-<!--<div class="transition bg-[oklch(92%_0.01_var(&#45;&#45;hue))] dark:bg-black rounded-2xl py-8 mt-4 mb-8 flex flex-col items-center justify-center px-6">-->
-<div class="transition border-dashed border-[oklch(85%_0.01_var(--hue))] dark:border-white/15 rounded-2xl mb-12 flex flex-col items-center justify-center px-6">
-    <div class="transition text-50 text-sm text-center">
-        &copy; <span id="copyright-year">{currentYear}</span> {profileConfig.name}. All Rights Reserved. /
-        <a class="transition link text-[var(--primary)] font-medium" target="_blank" href={url('rss.xml')}>RSS</a> /
-        <a class="transition link text-[var(--primary)] font-medium" target="_blank" href={url('sitemap-index.xml')}>Sitemap</a><br>
-        Powered by
-        <a class="transition link text-[var(--primary)] font-medium" target="_blank" href="https://astro.build">Astro</a> &
-        <a class="transition link text-[var(--primary)] font-medium" target="_blank" href="https://github.com/saicaca/fuwari">Fuwari</a>
-    </div>
-</div>
+<footer class="site-footer">
+	<div class="footer-inner">
+		<p>
+			&copy; <span>{currentYear}</span> {profileConfig.name}
+			<span class="footer-note">真实排障，持续记录。</span>
+		</p>
+		<nav aria-label="页脚链接">
+			<a href={url("rss.xml")}>RSS</a>
+			<a href={url("sitemap-index.xml")}>Sitemap</a>
+			<a href="https://astro.build" target="_blank" rel="noopener">Astro</a>
+			<a href="https://github.com/saicaca/fuwari" target="_blank" rel="noopener">Fuwari</a>
+		</nav>
+	</div>
+</footer>
+
+<style>
+	.site-footer {
+		margin: 2.75rem 0 2.25rem;
+		padding: 0 1rem;
+		color: var(--text-muted);
+	}
+	.footer-inner {
+		display: flex;
+		max-width: 72rem;
+		margin: 0 auto;
+		padding-top: 1.25rem;
+		border-top: 1px solid var(--border-subtle);
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		font-size: 0.78rem;
+	}
+	p { margin: 0; }
+	.footer-note {
+		margin-left: 0.65rem;
+		color: var(--text-subtle);
+	}
+	nav {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.9rem;
+	}
+	a {
+		padding: 0.35rem 0;
+		color: var(--text-muted);
+		font-weight: 600;
+	}
+	a:hover { color: var(--accent-text); }
+	@media (max-width: 640px) {
+		.site-footer { margin: 2rem 0 1.5rem; padding: 0 0.5rem; }
+		.footer-inner {
+			align-items: flex-start;
+			flex-direction: column;
+			gap: 0.55rem;
+		}
+		.footer-note { display: block; margin: 0.3rem 0 0; }
+		nav { gap: 1rem; }
+		a { min-height: 44px; display: inline-flex; align-items: center; }
+	}
+</style>
