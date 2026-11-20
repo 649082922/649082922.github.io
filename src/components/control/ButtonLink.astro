@@ -4,40 +4,53 @@ interface Props {
 	url?: string;
 	label?: string;
 }
-const { badge, url, label } = Astro.props;
+const { badge, url, label }: Props = Astro.props;
 ---
-<a href={url} aria-label={label}>
-    <button
-        class:list={`
-            w-full
-            h-10
-            rounded-lg
-            bg-none
-            hover:bg-[var(--btn-plain-bg-hover)]
-            active:bg-[var(--btn-plain-bg-active)]
-            transition-all
-            pl-2
-            hover:pl-3
-            
-            text-neutral-700
-            hover:text-[var(--primary)]
-            dark:text-neutral-300
-            dark:hover:text-[var(--primary)]
-        `
-        }
-    >
-        <div class="flex items-center justify-between relative mr-2">
-            <div class="overflow-hidden text-left whitespace-nowrap overflow-ellipsis  ">
-                <slot></slot>
-            </div>
-            { badge !== undefined && badge !== null && badge !== '' &&
-                <div class="transition px-2 h-7 ml-4 min-w-[2rem] rounded-lg text-sm font-bold
-                    text-[var(--btn-content)] dark:text-[var(--deep-text)]
-                    bg-[var(--btn-regular-bg)] dark:bg-[var(--primary)]
-                    flex items-center justify-center">
-                    { badge }
-                </div>
-            }
-        </div>
-    </button>
+<a href={url} aria-label={label} class="category-link">
+	<span class="category-name"><slot></slot></span>
+	{badge !== undefined && badge !== null && badge !== "" && (
+		<span class="category-count">{badge}</span>
+	)}
 </a>
+
+<style>
+	.category-link {
+		display: flex;
+		width: 100%;
+		min-height: 44px;
+		padding: 0.45rem 0.55rem;
+		border-radius: 0.65rem;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		color: var(--text-muted);
+		font-size: 0.88rem;
+		transition: color var(--duration-fast) ease, background var(--duration-fast) ease;
+	}
+	.category-link:hover {
+		background: var(--btn-plain-bg-hover);
+		color: var(--accent-text);
+	}
+	.category-name {
+		min-width: 0;
+		overflow: hidden;
+		text-align: left;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+	.category-count {
+		display: inline-flex;
+		min-width: 1.8rem;
+		height: 1.65rem;
+		padding: 0 0.45rem;
+		border: 1px solid var(--border-subtle);
+		border-radius: 999px;
+		align-items: center;
+		justify-content: center;
+		background: var(--surface-muted);
+		color: var(--text-muted);
+		font-size: 0.72rem;
+		font-weight: 700;
+		font-variant-numeric: tabular-nums;
+	}
+</style>

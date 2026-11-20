@@ -9,8 +9,12 @@ rainbow-light = linear-gradient(to right, oklch(0.80 0.10 0), oklch(0.80 0.10 30
 rainbow-dark = linear-gradient(to right, oklch(0.70 0.10 0), oklch(0.70 0.10 30), oklch(0.70 0.10 60), oklch(0.70 0.10 90), oklch(0.70 0.10 120), oklch(0.70 0.10 150), oklch(0.70 0.10 180), oklch(0.70 0.10 210), oklch(0.70 0.10 240), oklch(0.70 0.10 270), oklch(0.70 0.10 300), oklch(0.70 0.10 330), oklch(0.70 0.10 360))
 
 :root
-  --radius-large 1rem
-  --content-delay 150ms
+  --radius-large 1.25rem
+  --content-delay 120ms
+  --duration-fast 160ms
+  --duration-base 220ms
+  --duration-page 280ms
+  --ease-out cubic-bezier(0.22, 1, 0.36, 1)
 
 /* An util to define variables that vary with light and dark mode */
 define(vars)
@@ -24,10 +28,26 @@ define(vars)
 
 define({
   --primary: oklch(0.70 0.14 var(--hue)) oklch(0.75 0.14 var(--hue))
-  --page-bg: oklch(0.95 0.01 var(--hue)) oklch(0.16 0.014 var(--hue))
-  --card-bg: white oklch(0.23 0.015 var(--hue))
+  --page-bg: #f5f7fb #0d1018
+  --card-bg: white(0.88) #141822e6
+  --nav-bg: white(0.86) #10141de6
+  --surface-solid: #ffffff #151923
+  --surface-muted: #f0f2f7 #1b202c
+  --text-strong: #171923 #f4f5f9
+  --text-muted: #5d6473 #aab1c1
+  --text-subtle: #707788 #8d96a9
+  --border-subtle: black(0.08) white(0.10)
+  --border-strong: black(0.14) white(0.16)
+  --accent-text: oklch(0.50 0.13 var(--hue)) oklch(0.78 0.12 var(--hue))
+  --accent-fill: var(--primary)
+  --on-accent: oklch(0.24 0.025 var(--hue)) oklch(0.22 0.025 var(--hue))
+  --focus-ring: oklch(0.58 0.16 var(--hue)) oklch(0.80 0.14 var(--hue))
+  --success: #237a57 #67d5a4
+  --warning: #946200 #f2c76e
+  --danger: #b83a4c #ff8f9d
+  --info: #356fb6 #8ebcff
 
-  --btn-content: oklch(0.55 0.12 var(--hue)) oklch(0.75 0.1 var(--hue))
+  --btn-content: var(--accent-text)
 
   --btn-regular-bg: oklch(0.95 0.025 var(--hue)) oklch(0.33 0.035 var(--hue))
   --btn-regular-bg-hover: oklch(0.9 0.05 var(--hue)) oklch(0.38 0.04 var(--hue))
@@ -65,7 +85,7 @@ define({
   --link-hover: oklch(0.95 0.025 var(--hue)) oklch(0.40 0.08 var(--hue))
   --link-active: oklch(0.90 0.05 var(--hue)) oklch(0.35 0.07 var(--hue))
 
-  --float-panel-bg: white oklch(0.19 0.015 var(--hue))
+  --float-panel-bg: white(0.96) #121620f7
 
   --scrollbar-bg-light: black(0.4)
   --scrollbar-bg-hover-light: black(0.5)
@@ -96,3 +116,11 @@ define({
   --toc-width: calc((100vw - var(--page-width)) / 2 - 1rem)
   --toc-item-active: oklch(0.70 0.13 var(--hue)) oklch(0.35 0.07 var(--hue))
 })
+
+:root
+  --shadow-card: 0 1px 2px rgba(20, 26, 43, 0.03), 0 18px 44px -36px rgba(20, 26, 43, 0.38)
+  --shadow-raised: 0 20px 54px -28px rgba(20, 26, 43, 0.30)
+
+:root.dark
+  --shadow-card: 0 1px 2px rgba(0, 0, 0, 0.18), 0 20px 48px -34px rgba(0, 0, 0, 0.72)
+  --shadow-raised: 0 22px 58px -28px rgba(0, 0, 0, 0.74)

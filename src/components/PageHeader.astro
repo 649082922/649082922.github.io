@@ -1,0 +1,89 @@
+---
+interface Props {
+	title: string;
+	description?: string;
+	meta?: string;
+	compact?: boolean;
+	class?: string;
+}
+
+const {
+	title,
+	description,
+	meta,
+	compact = false,
+	class: className = "",
+} = Astro.props;
+const hasActions = Astro.slots.has("actions");
+---
+
+<header class:list={["page-header", { compact, "has-actions": hasActions }, className]}>
+	<div class="page-header-copy">
+		<div class="page-title-row">
+			<h1>{title}</h1>
+			{meta && <span class="page-meta">{meta}</span>}
+		</div>
+		{description && <p>{description}</p>}
+	</div>
+	{hasActions && (
+		<div class="page-header-actions">
+			<slot name="actions" />
+		</div>
+	)}
+</header>
+
+<style>
+	.page-header {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		gap: 1.25rem;
+		margin-bottom: 1.5rem;
+	}
+	.page-header-copy { min-width: 0; }
+	.page-title-row {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 0.75rem;
+	}
+	h1 {
+		margin: 0;
+		color: var(--text-strong);
+		font-size: clamp(1.85rem, 3.2vw, 2.65rem);
+		font-weight: 750;
+		line-height: 1.18;
+		letter-spacing: -0.04em;
+	}
+	p {
+		max-width: 44rem;
+		margin: 0.75rem 0 0;
+		color: var(--text-muted);
+		font-size: 0.94rem;
+		line-height: 1.75;
+	}
+	.page-meta {
+		color: var(--text-subtle);
+		font-size: 0.78rem;
+		white-space: nowrap;
+	}
+	.page-header-actions {
+		display: flex;
+		flex: none;
+		flex-wrap: wrap;
+		align-items: center;
+		gap: 0.65rem;
+	}
+	.page-header.compact { margin-bottom: 1.1rem; }
+	.page-header.compact h1 { font-size: clamp(1.65rem, 2.5vw, 2.1rem); }
+	@media (max-width: 640px) {
+		.page-header {
+			align-items: flex-start;
+			flex-direction: column;
+			margin-bottom: 1.25rem;
+		}
+		h1 { font-size: 1.85rem; }
+		p { font-size: 0.9rem; }
+		.page-header-actions { width: 100%; }
+	}
+</style>

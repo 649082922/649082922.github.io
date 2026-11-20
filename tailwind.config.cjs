@@ -6,7 +6,14 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ["Roboto", "sans-serif", ...defaultTheme.fontFamily.sans],
+        sans: [
+          "Segoe UI Variable",
+          "Roboto",
+          "PingFang SC",
+          "Hiragino Sans GB",
+          "Microsoft YaHei",
+          ...defaultTheme.fontFamily.sans,
+        ],
       },
     },
   },
